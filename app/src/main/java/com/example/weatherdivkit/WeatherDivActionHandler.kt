@@ -5,6 +5,7 @@ import android.os.Handler
 import android.os.Looper
 import com.yandex.div.core.DivActionHandler
 import com.yandex.div.core.DivViewFacade
+import com.yandex.div.core.view2.Div2View
 import com.yandex.div.json.expressions.ExpressionResolver
 import com.yandex.div2.DivAction
 
@@ -14,6 +15,8 @@ class WeatherDivActionHandler(
     private val onSetLang: (String) -> Unit,
     private val onSetTheme: (String) -> Unit,
     private val onSetCompact: (Boolean) -> Unit,
+    private val onCitySearch: (String, Div2View) -> Unit,
+    private val onSetCity: (lat: String, lon: String, name: String) -> Unit,
 ) : DivActionHandler() {
 
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -27,13 +30,13 @@ class WeatherDivActionHandler(
             ?: return super.handleAction(action, view, resolver)
 
         return if (url.scheme == SCHEME) {
-            handleWeatherAction(url)
+            handleWeatherAction(url, view)
         } else {
             super.handleAction(action, view, resolver)
         }
     }
 
-    private fun handleWeatherAction(url: Uri): Boolean {
+    private fun handleWeatherAction(url: Uri, view: DivViewFacade): Boolean {
         return when (url.host) {
             "navigate" -> {
                 val screenParam = url.getQueryParameter("screen")
@@ -64,6 +67,19 @@ class WeatherDivActionHandler(
                 val raw = url.getQueryParameter("value")
                 val value = raw?.toBooleanStrictOrNull() ?: return false
                 mainHandler.post { onSetCompact(value) }
+                true
+            }
+            "city_search" -> {
+                val q = url.getQueryParameter("q") ?: ""
+                val div2View = view as? Div2View ?: return false
+                mainHandler.post { onCitySearch(q, div2View) }
+                true
+            }
+            "set_city" -> {
+                val lat = url.getQueryParameter("lat") ?: return false
+                val lon = url.getQueryParameter("lon") ?: return false
+                val name = url.getQueryParameter("name") ?: ""
+                mainHandler.post { onSetCity(lat, lon, name) }
                 true
             }
             else -> false

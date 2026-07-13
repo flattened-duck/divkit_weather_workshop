@@ -1,10 +1,12 @@
 package com.example.weatherdivkit.divkit
 
 import android.content.Context
+import android.net.Uri
 import android.util.Log
 import com.yandex.div.data.DivParsingEnvironment
 import com.yandex.div.json.ParsingErrorLogger
 import com.yandex.div2.DivData
+import com.yandex.div2.DivPatch
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
@@ -49,12 +51,23 @@ class DocumentLoader(private val context: Context) {
     }
 
     /**
-     * Fetches the document from the backend at http://10.0.2.2:8080/document?lang=[lang],
-     * parses the same envelope shape, and returns a map of screen id → DivData.
+     * Fetches the document from the backend at http://10.0.2.2:8080/document?lang=[lang]
+     * (optionally with city coordinates/name), parses the same envelope shape, and returns
+     * a map of screen id → DivData.
      * Returns null on network failure or parse error (use [loadFromAssets] as fallback).
      */
-    fun loadFromNetwork(lang: String): Map<String, DivData>? {
-        val url = "$baseUrl/document?lang=$lang"
+    fun loadFromNetwork(
+        lang: String,
+        lat: String? = null,
+        lon: String? = null,
+        name: String? = null,
+    ): Map<String, DivData>? {
+        val uriBuilder = Uri.parse("$baseUrl/document").buildUpon()
+            .appendQueryParameter("lang", lang)
+        if (!lat.isNullOrBlank()) uriBuilder.appendQueryParameter("lat", lat)
+        if (!lon.isNullOrBlank()) uriBuilder.appendQueryParameter("lon", lon)
+        if (!name.isNullOrBlank()) uriBuilder.appendQueryParameter("name", name)
+        val url = uriBuilder.build().toString()
         val request = Request.Builder()
             .url(url)
             .build()
@@ -72,6 +85,29 @@ class DocumentLoader(private val context: Context) {
             null
         } catch (e: Exception) {
             Log.e(TAG, "Failed to parse network document (lang=$lang)", e)
+            null
+        }
+    }
+
+    /**
+     * Fetches `/city-search?q=&lang=` and parses the response body as a [DivPatch]
+     * (envelope shape `{"changes":[…]}`, optionally with a `templates` object).
+     * Must be called off the main thread; returns null on network/parse failure.
+     */
+    fun loadCitySearch(query: String, lang: String): DivPatch? {
+        val url = Uri.parse("$baseUrl/city-search").buildUpon()
+            .appendQueryParameter("q", query)
+            .appendQueryParameter("lang", lang)
+            .build().toString()
+        val request = Request.Builder().url(url).build()
+        return try {
+            val body = httpClient.newCall(request).execute().body?.string() ?: return null
+            val json = JSONObject(body)
+            val env = DivParsingEnvironment(ParsingErrorLogger.ASSERT)
+            json.optJSONObject("templates")?.let { env.parseTemplates(it) }
+            DivPatch(env, json)
+        } catch (e: Exception) {
+            Log.e(TAG, "city-search failed (q='$query')", e)
             null
         }
     }
