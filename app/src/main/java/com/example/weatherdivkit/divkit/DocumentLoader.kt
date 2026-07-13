@@ -54,7 +54,7 @@ class DocumentLoader(private val context: Context) {
      * Returns null on network failure or parse error (use [loadFromAssets] as fallback).
      */
     fun loadFromNetwork(lang: String): Map<String, DivData>? {
-        val url = "http://10.0.2.2:8080/document?lang=$lang"
+        val url = "$baseUrl/document?lang=$lang"
         val request = Request.Builder()
             .url(url)
             .build()
@@ -94,7 +94,9 @@ class DocumentLoader(private val context: Context) {
         }
     }
 
-    private companion object {
+    companion object {
         const val TAG = "DocumentLoader"
+        const val DEFAULT_BASE_URL = "http://10.0.2.2:8080"
+        @Volatile var baseUrl: String = DEFAULT_BASE_URL
     }
 }
