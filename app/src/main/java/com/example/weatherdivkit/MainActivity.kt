@@ -6,7 +6,9 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.weatherdivkit.databinding.ActivityMainBinding
 import com.example.weatherdivkit.divkit.DocumentLoader
@@ -25,6 +27,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import java.net.Proxy
+import kotlin.math.roundToInt
 
 class MainActivity : AppCompatActivity() {
 
@@ -35,6 +38,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var themeVar: Variable.StringVariable
     private lateinit var compactVar: Variable.BooleanVariable
     private lateinit var headerStateVar: Variable.StringVariable
+    private lateinit var statusInsetVar: Variable.IntegerVariable
+    private lateinit var navInsetVar: Variable.IntegerVariable
 
     /** Currently rendered screens map. Replaced atomically on refetch. */
     private var screens: Map<Screen, DivData> = emptyMap()
@@ -59,6 +64,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
 
         val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val themeMode = prefs.getString(PREF_THEME_MODE, DEFAULT_THEME_MODE) ?: DEFAULT_THEME_MODE
@@ -69,8 +75,21 @@ class MainActivity : AppCompatActivity() {
         themeVar = Variable.StringVariable("theme", effective)
         compactVar = Variable.BooleanVariable("compact", compact)
         headerStateVar = Variable.StringVariable("header_state", "full")
+        statusInsetVar = Variable.IntegerVariable("status_inset", 0L)
+        navInsetVar = Variable.IntegerVariable("nav_inset", 0L)
         variableController = DivVariableController()
-        variableController.declare(themeModeVar, themeVar, compactVar, headerStateVar)
+        variableController.declare(
+            themeModeVar, themeVar, compactVar, headerStateVar, statusInsetVar, navInsetVar,
+        )
+
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            val d = resources.displayMetrics.density
+            statusInsetVar.set((bars.top / d).roundToInt().toLong())
+            navInsetVar.set((bars.bottom / d).roundToInt().toLong())
+            insets
+        }
+        ViewCompat.requestApplyInsets(binding.root)
 
         divConfiguration = DivConfiguration.Builder(CoilDivImageLoader(this, imageHttpClient))
             .actionHandler(WeatherDivActionHandler(
@@ -172,6 +191,7 @@ class MainActivity : AppCompatActivity() {
     private fun onSetCompact(value: Boolean) {
         getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().putBoolean(PREF_COMPACT, value).apply()
         compactVar.set(value)
+        if (value) headerStateVar.set("collapsed")
     }
 
     /** system → read OS night mode; otherwise the explicit user choice. */
