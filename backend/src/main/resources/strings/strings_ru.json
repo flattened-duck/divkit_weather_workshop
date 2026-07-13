@@ -55,5 +55,7 @@
   "unit.wind": "км/ч",
   "city.default": "Москва",
   "city.search.placeholder": "Поиск города",
-  "city.search.empty": "Ничего не найдено"
+  "city.search.empty": "Ничего не найдено",
+  "settings.city.label": "Город",
+  "city.search.button": "Найти"
 }
