@@ -1,0 +1,23 @@
+syntax = "proto3";
+package workshop;
+option java_package = "workshop.proto";
+
+enum ConditionCode {
+  CLEAR   = 0;
+  CLOUDY  = 1;
+  RAIN    = 2;
+  SNOW    = 3;
+  THUNDER = 4;
+}
+
+message DayForecast {
+  int32         temp_c      = 1;
+  int32         temp_feels  = 2;
+  ConditionCode condition   = 3;
+  string        city        = 4;
+}
+
+message WeatherData {
+  DayForecast today    = 1;
+  DayForecast tomorrow = 2;
+}
