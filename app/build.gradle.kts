@@ -51,15 +51,15 @@ dependencies {
     implementation(libs.divkit.core)
     implementation(libs.divkit.div)
     implementation(libs.divkit.json)
-    implementation(libs.divkit.picasso)
-    implementation(libs.divkit.utils)
     implementation(libs.divkit.storage)
+    implementation(libs.divkit.coil)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.androidx.constraintlayout)
+    implementation(libs.androidx.recyclerview)
     implementation(libs.okhttp)
 
     testImplementation(libs.junit)
