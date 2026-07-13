@@ -14,7 +14,7 @@ import divkit.dsl.data
 import divkit.dsl.divan
 import divkit.dsl.edgeInsets
 import divkit.dsl.evaluate
-import divkit.dsl.horizontal
+import divkit.dsl.gallery
 import divkit.dsl.matchParentSize
 import divkit.dsl.scope.DivScope
 import divkit.dsl.solidBackground
@@ -64,9 +64,16 @@ class WeatherAboutRenderer(
                 div = container(
                     orientation = vertical,
                     width = matchParentSize(),
+                    height = matchParentSize(),
                     background = listOf(solidBackground(color("#FFF2F2F7")).evaluate(color = expression<Color>(screenBgExpr))),
-                    paddings = edgeInsets(start = 16, top = 16, end = 16, bottom = 16),
                     items = listOf(
+                        gallery(
+                            id = "about_scroll",
+                            orientation = vertical,
+                            width = matchParentSize(),
+                            height = matchParentSize(),
+                            paddings = edgeInsets(start = 16, top = 16, end = 16, bottom = 16),
+                            items = listOf(
                         // Title — theme-aware
                         text(
                             width = wrapContentSize(),
@@ -117,39 +124,22 @@ class WeatherAboutRenderer(
                         ),
 
                         // ── Navigation ──────────────────────────────────────────────
-                        container(
-                            orientation = horizontal,
-                            width = matchParentSize(),
-                            items = listOf(
-                                text(
-                                    width = wrapContentSize(),
-                                    text = localizer.getOrDefault("back", "Back"),
-                                    fontSize = 16,
-                                    textAlignmentHorizontal = center,
-                                    margins = edgeInsets(end = 8),
-                                    paddings = edgeInsets(start = 16, top = 10, end = 16, bottom = 10),
-                                    background = listOf(solidBackground(color("#FF8E8E93"))),
-                                    border = border(cornerRadius = 10),
-                                    textColor = color("#FFFFFFFF"),
-                                    action = action(
-                                        logId = "nav_back",
-                                        url = url("weather-app://back"),
-                                    ),
-                                ),
-                                text(
-                                    width = wrapContentSize(),
-                                    text = localizer.getOrDefault("nav.main", "Home"),
-                                    fontSize = 16,
-                                    textAlignmentHorizontal = center,
-                                    paddings = edgeInsets(start = 16, top = 10, end = 16, bottom = 10),
-                                    background = listOf(solidBackground(color("#FF007AFF"))),
-                                    border = border(cornerRadius = 10),
-                                    textColor = color("#FFFFFFFF"),
-                                    action = action(
-                                        logId = "nav_main",
-                                        url = url("weather-app://navigate?screen=main"),
-                                    ),
-                                ),
+                        // Single button: every sub-screen is reached only from main, so a
+                        // separate "Back" action would be a redundant duplicate of "Home".
+                        text(
+                            width = wrapContentSize(),
+                            text = localizer.getOrDefault("nav.main", "Home"),
+                            fontSize = 16,
+                            textAlignmentHorizontal = center,
+                            paddings = edgeInsets(start = 16, top = 10, end = 16, bottom = 10),
+                            background = listOf(solidBackground(color("#FF007AFF"))),
+                            border = border(cornerRadius = 10),
+                            textColor = color("#FFFFFFFF"),
+                            action = action(
+                                logId = "nav_main",
+                                url = url("weather-app://navigate?screen=main"),
+                            ),
+                        ),
                             ),
                         ),
                     ),

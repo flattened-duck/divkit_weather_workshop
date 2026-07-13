@@ -134,13 +134,17 @@ class ApplicationSmokeTest {
         assertTrue(body.contains("scroll_state"), "Must carry the scroll_state extension for header collapse")
         assertTrue(body.contains("\"sunrise\""), "sun_phase custom_props must carry the sunrise key")
         assertTrue(body.contains("\"sunset\""), "sun_phase custom_props must carry the sunset key")
-        // Read-global guard: header_collapsed is READ in an expression but NOT declared as a local
-        // variable here (the client declares it globally). A local declaration would shadow the
-        // global and silently break the header collapse — lock that decision in.
-        assertTrue(body.contains("@{header_collapsed"), "header_collapsed must be read in the state expression")
+        // Read-global guard: header_state is referenced via state_id_variable (the reactive
+        // DivKit binding) but NOT declared as a local variable here (the client declares it
+        // globally). A local declaration would shadow the global and silently break the header
+        // collapse — lock that decision in.
+        assertTrue(
+            body.contains("\"state_id_variable\":\"header_state\""),
+            "header_state must be wired as the header state's state_id_variable",
+        )
         assertFalse(
-            body.contains("\"name\":\"header_collapsed\""),
-            "header_collapsed must NOT be declared as a local variable (client owns it globally)",
+            body.contains("\"name\":\"header_state\""),
+            "header_state must NOT be declared as a local variable (client owns it globally)",
         )
     }
 

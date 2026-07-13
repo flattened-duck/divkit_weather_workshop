@@ -256,19 +256,24 @@ class WeatherMainRenderer(
             ),
         )
 
-        // Collapse variable "header_collapsed" is a GLOBAL card variable declared by the
+        // Collapse variable "header_state" is a GLOBAL card variable declared by the
         // native client (Worktree C), same convention as the existing "theme"/"compact"
-        // variables: read here via expression, never declared locally (would shadow/conflict).
+        // variables: never declared locally here (would shadow/conflict).
+        // `default_state_id` as an expression is evaluated once and does NOT react to variable
+        // writes; `state_id_variable` is the reactive binding DivKit's engine subscribes to
+        // (see DivStateBinder.observeStateIdVariable in R-32.57, which calls switchToState on
+        // every write of the named variable).
         val headerState = state(
             id = "header",
             defaultStateId = "full",
+            stateIdVariable = HEADER_STATE_VAR,
             transitionChange = changeBoundsTransition(duration = 250),
             states = listOf(
                 stateItem(stateId = "full", div = fullHeader),
                 stateItem(stateId = "collapsed", div = compactHeader),
             ),
             width = matchParentSize(),
-        ).evaluate(defaultStateId = expression<String>(HEADER_STATE_EXPR))
+        )
 
         val hourlyGallery = gallery(
             orientation = horizontal,
@@ -539,9 +544,10 @@ class WeatherMainRenderer(
         const val SUB_COLOR_EXPR = "@{theme == 'dark' ? '#FF9E9EA3' : '#FF6E6E73'}"
         const val CARD_BG_EXPR = "@{theme == 'dark' ? '#CC1C1C1E' : '#CCFFFFFF'}"
 
-        // header_collapsed is a global card variable owned/written by the native client
-        // (Worktree C); this card only reads it, never declares it (see headerState above).
-        const val HEADER_STATE_EXPR = "@{header_collapsed ? 'collapsed' : 'full'}"
+        // header_state ("full"/"collapsed") is a global card variable owned/written by the
+        // native client (Worktree C); this card only references it by name via
+        // state_id_variable, never declares it (see headerState above).
+        const val HEADER_STATE_VAR = "header_state"
 
         const val BG_IMAGE_BASE_URL =
             "https://raw.githubusercontent.com/flattened-duck/divkit_weather_workshop/main/S3/background_"
