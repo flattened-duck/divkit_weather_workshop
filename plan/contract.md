@@ -285,12 +285,81 @@ divkit-weather-workshop/
 
 | Компонент      | Версия                                    |
 |----------------|-------------------------------------------|
-| DivKit Android | `32.6.0` (последняя на Maven Central)     |
+| DivKit Android | `32.57.0`                                 |
 | DivKit group   | `com.yandex.div`                          |
-| divan (backend) | `com.yandex.div:kotlin-json-builder:32.6.0` |
+| divan (backend) | `com.yandex.div:kotlin-json-builder:32.57.0` |
 | minSdk         | 23                                        |
 | targetSdk      | 35                                        |
-| Kotlin         | `2.1.20` (app и backend)                  |
+| Kotlin (app)   | `2.2.10`                                  |
+| Kotlin (backend) | `2.1.20`                                |
 | Java toolchain | 17                                        |
 | AGP            | `8.12.3`                                  |
 | Ktor           | `3.1.3`                                   |
+
+> Bumped in Stage 0: divan `32.6.0` → `32.57.0` (required for the `divanPatch`/`patch`/`patchChange`
+> DivPatch DSL used by `GET /city-search`). App-side DivKit/Kotlin bump lands with the Stage 1
+> client work; recorded here as the target version.
+
+---
+
+## 11. Stage 0 — Weather data spine (Open-Meteo) + city search
+
+Added in Stage 0 (`backend/**` only; no `app/**` changes yet — client consumption is Stage 1).
+
+### 11.1 Name map
+
+| Entity | Name | Set by | Read by |
+|---|---|---|---|
+| DivCustom sun phase | `custom_type: "sun_phase"` | native (C) | main JSON (A) |
+| Scroll-state extension | `id: "scroll_state"` | native (C) | gallery JSON (A) |
+| Header-collapsed var | `header_collapsed` (Boolean) | extension (C) | header exprs (A) |
+| Weather bg key | `bg_key` (String, §bg grammar) | backend data (Stage 0) | image underlay (A) |
+| Set-city action | `weather-app://set_city?lat=&lon=&name=` | UI (B) | handler (C) |
+| City-search action | `weather-app://city_search?q=` | input (B) | handler (C) → DivPatch |
+| Query variable | `city_query` (String) | input (B) | handler (C) |
+
+### 11.2 `/document` params
+
+`GET /document?lang=ru|en&lat=<double>&lon=<double>&name=<string>`. Moscow default
+(`CityRegistry.DEFAULT`, 55.7558/37.6173) when `lat`/`lon` are absent or unparsable.
+
+### 11.3 New endpoints
+
+- `GET /city-search?q=&lang=` → DivPatch JSON (shape §11.4, target id `city_search_results`).
+- `GET /weather-json?lang=&lat=&lon=&name=` → `WeatherData` proto as snake_case JSON (debug
+  endpoint; may be removed once the client consumes the real screens in Stage 1).
+
+### 11.4 DivPatch response shape
+
+```json
+{"changes":[{"id":"city_search_results","items":[<Div>…]}]}
+```
+
+Each item carries `action.url = weather-app://set_city?lat=&lon=&name=<urlencoded>`. Empty query
+or empty results → a single text item with the localized `city.search.empty` string, same shape.
+
+### 11.5 `bg_key` grammar + raw URL pattern
+
+`bg_key` = `{base}_{day|night}`, `base ∈ {sunny,cloudy,rain,storm,fog}`. 10 legal values:
+`sunny_day sunny_night cloudy_day cloudy_night rain_day rain_night storm_day storm_night fog_day fog_night`.
+
+Raw background image URL (documented for the client; NOT built on the backend):
+```
+https://raw.githubusercontent.com/flattened-duck/divkit_weather_workshop/main/S3/background_{bg_key}.png
+# popup image: .../S3/popup_image.png
+```
+
+WMO weather code → `ConditionCode` → `bg_key` base (any unmapped code → `FOG` → `fog`):
+
+| WMO codes | ConditionCode | bg base |
+|---|---|---|
+| 0, 1 | CLEAR | sunny |
+| 2, 3 | CLOUDY | cloudy |
+| 45, 48 | FOG | fog |
+| 51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82 | RAIN | rain |
+| 71, 73, 75, 77, 85, 86 | SNOW | cloudy |
+| 95, 96, 99 | THUNDER | storm |
+| (anything else) | FOG | fog |
+
+Day/night is computed by comparing `current.time` to `daily.sunrise[0]`/`daily.sunset[0]`, not by
+Open-Meteo's `is_day` field (that field is only a cross-check, unused in the mapping).

@@ -85,4 +85,49 @@ class ApplicationSmokeTest {
         assertTrue(body.contains("\"lifetime\":259200"), "3-day (seconds) TTL on the delay action must be present")
         assertFalse(body.contains("getTimestamp"), "getTimestamp is not a real DivKit 32.6.0 builtin, must not be used")
     }
+
+    @Test
+    fun `weather-json exposes current, hourly, daily, bg_key`() = testApplication {
+        application { module() }
+        val resp = client.get("/weather-json?lang=ru")
+        assertEquals(HttpStatusCode.OK, resp.status)
+        val body = resp.bodyAsText()
+        assertTrue(body.contains("\"current\""), "Must contain 'current' field")
+        assertTrue(body.contains("\"hourly\""), "Must contain 'hourly' field")
+        assertTrue(body.contains("\"daily\""), "Must contain 'daily' field")
+        assertTrue(body.contains("\"bg_key\""), "Must contain 'bg_key' field")
+        assertTrue(body.contains("cloudy_day"), "Mock bg_key must be 'cloudy_day'")
+    }
+
+    @Test
+    fun `city-search returns a divpatch`() = testApplication {
+        application { module() }
+        val resp = client.get("/city-search?q=Mos&lang=en")
+        assertEquals(HttpStatusCode.OK, resp.status)
+        val body = resp.bodyAsText()
+        assertTrue(body.contains("\"changes\""), "Must contain 'changes' key")
+        assertTrue(body.contains("city_search_results"), "Must target city_search_results")
+        assertTrue(body.contains("weather-app://set_city?"), "Must contain set_city action URL")
+        assertTrue(body.contains("Moscow"), "Must contain matching city name")
+    }
+
+    @Test
+    fun `city-search empty query returns empty-state patch`() = testApplication {
+        application { module() }
+        val resp = client.get("/city-search?q=&lang=ru")
+        assertEquals(HttpStatusCode.OK, resp.status)
+        val body = resp.bodyAsText()
+        assertTrue(body.contains("\"changes\""), "Must contain 'changes' key")
+        assertTrue(body.contains("city_search_results"), "Must target city_search_results")
+    }
+
+    @Test
+    fun `document still renders legacy today, tomorrow`() = testApplication {
+        application { module() }
+        val resp = client.get("/document?lang=ru")
+        assertEquals(HttpStatusCode.OK, resp.status)
+        val body = resp.bodyAsText()
+        assertTrue(body.contains("Сегодня"), "Must contain legacy 'Сегодня' label")
+        assertTrue(body.contains("Завтра"), "Must contain legacy 'Завтра' label")
+    }
 }

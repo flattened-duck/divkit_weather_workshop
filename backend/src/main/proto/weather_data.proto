@@ -8,8 +8,10 @@ enum ConditionCode {
   RAIN    = 2;
   SNOW    = 3;
   THUNDER = 4;
+  FOG     = 5;
 }
 
+// DEPRECATED (remove in Stage 1). Kept so the current WeatherMainRenderer keeps compiling.
 message DayForecast {
   int32         temp_c      = 1;
   int32         temp_feels  = 2;
@@ -17,7 +19,39 @@ message DayForecast {
   string        city        = 4;
 }
 
+message Current {
+  string        city        = 1;
+  int32         temp_c      = 2;
+  int32         feels_c     = 3;
+  ConditionCode condition   = 4;
+  int32         uv_index    = 5;   // 0..11+
+  int32         humidity    = 6;   // %
+  int32         pressure    = 7;   // hPa
+  int32         visibility  = 8;   // meters
+  int32         wind        = 9;   // km/h
+  string        sunrise     = 10;  // "HH:mm" local
+  string        sunset      = 11;  // "HH:mm" local
+  string        bg_key      = 12;  // "{sunny|cloudy|rain|storm|fog}_{day|night}"
+}
+
+message HourlyPoint {
+  string        time        = 1;   // "HH:mm" local, or localized "now" for the current hour
+  int32         temp_c      = 2;
+  ConditionCode condition   = 3;
+}
+
+message DailyPoint {
+  string        weekday     = 1;   // short localized, e.g. "Пн"/"Mon"
+  int32         temp_min    = 2;
+  int32         temp_max    = 3;
+  ConditionCode condition   = 4;
+  int32         precip_prob = 5;   // %
+}
+
 message WeatherData {
-  DayForecast today    = 1;
-  DayForecast tomorrow = 2;
+  DayForecast          today    = 1;   // deprecated, populated for legacy renderer
+  DayForecast          tomorrow = 2;   // deprecated, populated for legacy renderer
+  Current              current  = 3;
+  repeated HourlyPoint hourly   = 4;   // exactly 24
+  repeated DailyPoint  daily    = 5;   // exactly 7
 }

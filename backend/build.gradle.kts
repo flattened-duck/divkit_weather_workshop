@@ -13,13 +13,17 @@ kotlin {
 }
 
 val ktorVersion = "3.1.3"
-val divanVersion = "32.6.0"
+val divanVersion = "32.57.0"
 
 dependencies {
     // Ktor server
     implementation("io.ktor:ktor-server-core:$ktorVersion")
     implementation("io.ktor:ktor-server-netty:$ktorVersion")
     implementation("io.ktor:ktor-server-content-negotiation:$ktorVersion")
+
+    // Ktor client (Open-Meteo)
+    implementation("io.ktor:ktor-client-core:$ktorVersion")
+    implementation("io.ktor:ktor-client-cio:$ktorVersion")
 
     // DivKit JSON-builder (divan)
     implementation("com.yandex.div:kotlin-json-builder:$divanVersion")
@@ -30,6 +34,7 @@ dependencies {
 
     // Protobuf runtime
     implementation("com.google.protobuf:protobuf-kotlin:4.29.3")
+    implementation("com.google.protobuf:protobuf-java-util:4.29.3")
 
     // Test
     testImplementation("io.ktor:ktor-server-test-host:$ktorVersion")
@@ -56,4 +61,5 @@ application {
 
 tasks.test {
     useJUnit()
+    systemProperty("weather.source", "mock")
 }
