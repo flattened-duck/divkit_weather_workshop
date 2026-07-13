@@ -1,0 +1,37 @@
+[versions]
+agp = "8.11.0"
+kotlin = "2.0.21"
+coreKtx = "1.10.1"
+activity = "1.9.2"
+appcompat = "1.6.1"
+material = "1.10.0"
+constraint = "2.1.4"
+junit = "4.13.2"
+junitVersion = "1.1.5"
+espressoCore = "3.5.1"
+divkit = "32.6.0"
+okhttp = "4.12.0"
+
+[libraries]
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-activity = { module = "androidx.activity:activity-ktx", version.ref = "activity" }
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+androidx-constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version.ref = "constraint" }
+material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+
+okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
+
+divkit-div = { group = "com.yandex.div", name = "div", version.ref = "divkit" }
+divkit-core = { group = "com.yandex.div", name = "div-core", version.ref = "divkit" }
+divkit-json = { group = "com.yandex.div", name = "div-json", version.ref = "divkit" }
+divkit-picasso = { group = "com.yandex.div", name = "picasso", version.ref = "divkit" }
+divkit-utils = { group = "com.yandex.div", name = "utils", version.ref = "divkit" }
+divkit-storage = { group = "com.yandex.div", name = "div-storage", version.ref = "divkit" }
+
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
+androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }

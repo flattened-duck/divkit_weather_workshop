@@ -1,0 +1,18 @@
+# Python (talk/ build scripts)
+.venv/
+__pycache__/
+*.pyc
+
+# Generated presentation render artifacts
+talk/render*/
+
+# macOS
+.DS_Store
+
+# Gradle / Android / IntelliJ (app & backend, once built)
+**/build/
+**/.gradle/
+local.properties
+*.iml
+.idea/
+captures/
