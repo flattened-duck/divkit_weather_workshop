@@ -29,8 +29,8 @@ class ApplicationSmokeTest {
         application { module() }
         val resp = client.get("/document?lang=en")
         val body = resp.bodyAsText()
-        assertTrue(body.contains("Today"), "English response must contain 'Today'")
-        assertFalse(body.contains("Сегодня"), "English response must not contain Russian 'Сегодня'")
+        assertTrue(body.contains("Weather"), "English response must contain 'Weather'")
+        assertFalse(body.contains("Погода"), "English response must not contain Russian 'Погода'")
     }
 
     @Test
@@ -122,12 +122,13 @@ class ApplicationSmokeTest {
     }
 
     @Test
-    fun `document still renders legacy today, tomorrow`() = testApplication {
+    fun `document renders new weather main card`() = testApplication {
         application { module() }
         val resp = client.get("/document?lang=ru")
         assertEquals(HttpStatusCode.OK, resp.status)
         val body = resp.bodyAsText()
-        assertTrue(body.contains("Сегодня"), "Must contain legacy 'Сегодня' label")
-        assertTrue(body.contains("Завтра"), "Must contain legacy 'Завтра' label")
+        assertTrue(body.contains("sun_phase"), "Must contain the sun_phase custom element")
+        assertTrue(body.contains("main_scroll"), "Must contain the main_scroll gallery id")
+        assertTrue(body.contains("background_cloudy_day.png"), "Must contain the mock bg image")
     }
 }
