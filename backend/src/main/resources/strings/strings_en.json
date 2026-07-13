@@ -57,5 +57,13 @@
   "city.search.placeholder": "Search city",
   "city.search.empty": "Nothing found",
   "settings.city.label": "City",
-  "city.search.button": "Search"
+  "city.search.button": "Search",
+  "feels.similar": "Similar to the actual temperature",
+  "feels.warmer": "Feels warmer than it actually is",
+  "feels.cooler": "Feels cooler than it actually is",
+  "vis.perfect": "Perfectly clear",
+  "vis.good": "Good visibility",
+  "vis.reduced": "Reduced visibility",
+  "precip.subtitle": "Chance today",
+  "card.sunrise_at": "Sunrise at"
 }

@@ -146,6 +146,7 @@ class ApplicationSmokeTest {
             body.contains("\"name\":\"header_state\""),
             "header_state must NOT be declared as a local variable (client owns it globally)",
         )
+        assertTrue(body.contains("\"type\":\"gradient\""), "UV/pressure scale gradient must be present")
     }
 
     @Test

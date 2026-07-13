@@ -4,6 +4,7 @@ import divkit.dsl.Action
 import divkit.dsl.Color
 import divkit.dsl.Div
 import divkit.dsl.Divan
+import divkit.dsl.EdgeInsets
 import divkit.dsl.Visibility
 import divkit.dsl.action
 import divkit.dsl.actionSetStoredValue
@@ -18,6 +19,7 @@ import divkit.dsl.changeBoundsTransition
 import divkit.dsl.color
 import divkit.dsl.container
 import divkit.dsl.core.expression
+import divkit.dsl.core.valueArrayElement
 import divkit.dsl.custom
 import divkit.dsl.data
 import divkit.dsl.divan
@@ -31,6 +33,7 @@ import divkit.dsl.gallery
 import divkit.dsl.grid
 import divkit.dsl.horizontal
 import divkit.dsl.image
+import divkit.dsl.linearGradient
 import divkit.dsl.matchParentSize
 import divkit.dsl.overlap
 import divkit.dsl.right
@@ -39,9 +42,11 @@ import divkit.dsl.solidBackground
 import divkit.dsl.state
 import divkit.dsl.stateItem
 import divkit.dsl.text
+import divkit.dsl.top
 import divkit.dsl.url
 import divkit.dsl.vertical
 import divkit.dsl.wrapContentSize
+import kotlin.math.roundToInt
 import workshop.l10n.Localizer
 import workshop.proto.WeatherDataOuterClass.ConditionCode
 import workshop.proto.WeatherDataOuterClass.DailyPoint
@@ -263,6 +268,12 @@ class WeatherMainRenderer(
         // writes; `state_id_variable` is the reactive binding DivKit's engine subscribes to
         // (see DivStateBinder.observeStateIdVariable in R-32.57, which calls switchToState on
         // every write of the named variable).
+        // Overlays the gallery (root-level sibling, drawn after it) instead of sharing a
+        // vertical column with it: a collapse-driven height change here must NOT re-layout
+        // scrollBody, or the resulting scroll-offset shift flips the scroll_state collapse
+        // threshold back and forth (collapse/expand feedback loop = jitter). See scrollBody's
+        // top padding (HEADER_EXPANDED_DP) for the matching reserved space, and the root
+        // overlap's item order below.
         val headerState = state(
             id = "header",
             defaultStateId = "full",
@@ -273,6 +284,9 @@ class WeatherMainRenderer(
                 stateItem(stateId = "collapsed", div = compactHeader),
             ),
             width = matchParentSize(),
+            height = wrapContentSize(),
+            alignmentVertical = top,
+            background = listOf(solidBackground().evaluate(color = expression<Color>(HEADER_SCRIM_EXPR))),
         )
 
         val hourlyGallery = gallery(
@@ -293,75 +307,98 @@ class WeatherMainRenderer(
             items = daily.map { dailyRow(it, weekMin, span) },
         )
 
-        val sunPhaseCustom = custom(
+        val uvFrac = current.uvIndex.coerceIn(0, 11) / 11.0
+        val pressFrac = ((current.pressure - PRESS_MIN).toDouble() / (PRESS_MAX - PRESS_MIN))
+
+        val feelsDelta = current.feelsC - current.tempC
+        val feelsSubtitle = when {
+            kotlin.math.abs(feelsDelta) <= 1 -> loc("feels.similar", "Similar to the actual temperature")
+            feelsDelta > 1 -> loc("feels.warmer", "Feels warmer than it actually is")
+            else -> loc("feels.cooler", "Feels cooler than it actually is")
+        }
+        val visSubtitle = when {
+            current.visibility >= 20000 -> loc("vis.perfect", "Perfectly clear")
+            current.visibility >= 10000 -> loc("vis.good", "Good visibility")
+            else -> loc("vis.reduced", "Reduced visibility")
+        }
+
+        val sunsetArc = custom(
             customType = "sun_phase",
             customProps = mapOf("sunrise" to current.sunrise, "sunset" to current.sunset),
             width = matchParentSize(),
             height = fixedSize(120),
         )
-        val sunPhaseBlock = container(
-            orientation = vertical,
-            width = matchParentSize(),
+        val sunsetCard = detailCard(
+            icon = "🌇",
+            title = loc("weather.sunset", "Sunset"),
+            bigValue = current.sunset,
+            body = sunsetArc,
+            subtitle = loc("card.sunrise_at", "Sunrise at") + " " + current.sunrise,
             margins = edgeInsets(top = 16),
-            background = listOf(solidBackground().evaluate(color = expression<Color>(CARD_BG_EXPR))),
-            border = border(cornerRadius = 16),
-            paddings = edgeInsets(start = 12, top = 12, end = 12, bottom = 12),
-            items = listOf(
-                sunPhaseCustom,
-                container(
-                    orientation = horizontal,
-                    width = matchParentSize(),
-                    margins = edgeInsets(top = 8),
-                    items = listOf(
-                        text(
-                            text = "↑ " + loc("weather.sunrise", "Sunrise") + " ${current.sunrise}",
-                            width = wrapContentSize(),
-                            fontSize = 13,
-                        ).evaluate(textColor = expression<Color>(SUB_COLOR_EXPR)),
-                        text(
-                            text = "  ↓ " + loc("weather.sunset", "Sunset") + " ${current.sunset}",
-                            width = wrapContentSize(),
-                            fontSize = 13,
-                            margins = edgeInsets(start = 16),
-                        ).evaluate(textColor = expression<Color>(SUB_COLOR_EXPR)),
-                    ),
-                ),
-            ),
         )
 
-        val metricsGrid = grid(
+        val detailsGrid = grid(
             columnCount = 2,
             width = matchParentSize(),
             margins = edgeInsets(top = 16),
             items = listOf(
-                metricCard(loc("weather.uv", "UV index"), "${current.uvIndex}  ${uvBand(current.uvIndex)}"),
-                metricCard(loc("feels_like", "feels like"), "${current.feelsC}°"),
-                metricCard(loc("weather.precipitation", "Precip"), "${daily0.precipProb}%"),
-                metricCard(
-                    loc("weather.visibility", "Vis"),
-                    "${current.visibility / 1000} " + loc("unit.visibility", "km"),
+                detailCard(
+                    icon = "🔆",
+                    title = loc("weather.uv", "UV index"),
+                    bigValue = "${current.uvIndex}",
+                    secondLine = uvBand(current.uvIndex),
+                    body = markerScale(uvFrac, UV_SCALE_HEX),
                 ),
-                metricCard(loc("weather.humidity", "Humidity"), "${current.humidity}%"),
-                metricCard(loc("weather.pressure", "Pressure"), "${current.pressure} " + loc("unit.pressure", "hPa")),
-                metricCard(loc("weather.wind", "Wind"), "${current.wind} " + loc("unit.wind", "km/h")),
+                detailCard(
+                    icon = "🌡️",
+                    title = loc("feels_like", "feels like"),
+                    bigValue = "${current.feelsC}°",
+                    subtitle = feelsSubtitle,
+                ),
+                detailCard(
+                    icon = "🌧️",
+                    title = loc("weather.precipitation", "Precipitation"),
+                    bigValue = "${daily0.precipProb}%",
+                    subtitle = loc("precip.subtitle", "Chance today"),
+                ),
+                detailCard(
+                    icon = "👁️",
+                    title = loc("weather.visibility", "Visibility"),
+                    bigValue = "${current.visibility / 1000} " + loc("unit.visibility", "km"),
+                    subtitle = visSubtitle,
+                ),
+                detailCard(
+                    icon = "💧",
+                    title = loc("weather.humidity", "Humidity"),
+                    bigValue = "${current.humidity}%",
+                ),
+                detailCard(
+                    icon = "🧭",
+                    title = loc("weather.pressure", "Pressure"),
+                    bigValue = "${current.pressure} " + loc("unit.pressure", "hPa"),
+                    body = markerScale(pressFrac, PRESS_SCALE_HEX),
+                ),
+                detailCard(
+                    icon = "💨",
+                    title = loc("weather.wind", "Wind"),
+                    bigValue = "${current.wind} " + loc("unit.wind", "km/h"),
+                ),
             ),
         )
 
+        // The gallery's top padding reserves space for the EXPANDED header, which now overlays
+        // it (see headerOverlay below) instead of sitting above it in a shared vertical column.
+        // Decoupling them stops the collapse-driven header resize from re-laying-out (and thus
+        // re-scrolling) the gallery beneath it, which used to cause a collapse/expand feedback
+        // loop via the scroll_state threshold (jitter).
         val scrollBody = gallery(
             id = "main_scroll",
             orientation = vertical,
             extensions = listOf(extension(id = "scroll_state", params = mapOf("orientation" to "vertical"))),
             width = matchParentSize(),
             height = matchParentSize(),
-            paddings = edgeInsets(start = 16, top = 8, end = 16, bottom = 96),
-            items = listOf(hourlyGallery, weeklyBlock, sunPhaseBlock, metricsGrid),
-        )
-
-        val mainColumn = container(
-            orientation = vertical,
-            width = matchParentSize(),
-            height = matchParentSize(),
-            items = listOf(headerState, scrollBody),
+            paddings = edgeInsets(start = 16, top = HEADER_EXPANDED_DP, end = 16, bottom = 96),
+            items = listOf(hourlyGallery, weeklyBlock, sunsetCard, detailsGrid),
         )
 
         // ---- Layer 2: bottom overlay FAB row ----
@@ -373,8 +410,6 @@ class WeatherMainRenderer(
             contentAlignmentHorizontal = center,
             paddings = edgeInsets(bottom = 20),
             items = listOf(
-                fab("🗺️", null),
-                fab("📍", null),
                 fab("⚙️", action(logId = "fab_settings", url = url("weather-app://navigate?screen=settings"))),
                 fab("☰", action(logId = "fab_about", url = url("weather-app://navigate?screen=about"))),
             ),
@@ -387,7 +422,7 @@ class WeatherMainRenderer(
                 orientation = overlap,
                 width = matchParentSize(),
                 height = matchParentSize(),
-                items = listOf(backgroundImage, mainColumn, fabRow, popupOverlay),
+                items = listOf(backgroundImage, scrollBody, headerState, fabRow, popupOverlay),
             ),
         )
     }
@@ -499,28 +534,108 @@ class WeatherMainRenderer(
         ),
     )
 
-    private fun DivScope.metricCard(label: String, value: String): Div = container(
+    private fun DivScope.detailCard(
+        icon: String,
+        title: String,
+        bigValue: String,
+        secondLine: String? = null,
+        body: Div? = null,
+        subtitle: String? = null,
+        margins: EdgeInsets = edgeInsets(start = 6, top = 6, end = 6, bottom = 6),
+    ): Div = container(
         orientation = vertical,
-        width = matchParentSize(),
-        margins = edgeInsets(start = 6, top = 6, end = 6, bottom = 6),
+        // weight is required for match_parent width to distribute evenly across grid columns
+        // on Android (client/android/div GridContainer only splits free space among weighted
+        // match_parent children); without it, columns collapse to near-zero width. Harmless when
+        // detailCard is used standalone (sunsetCard, a single vertical-gallery item, not a grid
+        // cell) since weight only matters among match_parent siblings sharing one parent.
+        width = matchParentSize(weight = 1.0),
+        margins = margins,
         paddings = edgeInsets(start = 14, top = 14, end = 14, bottom = 14),
         background = listOf(solidBackground().evaluate(color = expression<Color>(CARD_BG_EXPR))),
         border = border(cornerRadius = 16),
-        items = listOf(
-            text(
-                text = label,
-                width = wrapContentSize(),
-                fontSize = 13,
-            ).evaluate(textColor = expression<Color>(SUB_COLOR_EXPR)),
-            text(
-                text = value,
-                width = wrapContentSize(),
-                fontSize = 22,
-                fontWeight = bold,
-                margins = edgeInsets(top = 6),
-            ).evaluate(textColor = expression<Color>(TITLE_COLOR_EXPR)),
-        ),
+        items = buildList {
+            add(
+                text(
+                    text = "$icon  ${title.uppercase()}",
+                    width = wrapContentSize(),
+                    fontSize = 12,
+                ).evaluate(textColor = expression<Color>(SUB_COLOR_EXPR)),
+            )
+            if (bigValue.isNotEmpty()) {
+                add(
+                    text(
+                        text = bigValue,
+                        width = wrapContentSize(),
+                        fontSize = 28,
+                        fontWeight = bold,
+                        margins = edgeInsets(top = 8),
+                    ).evaluate(textColor = expression<Color>(TITLE_COLOR_EXPR)),
+                )
+            }
+            if (secondLine != null) {
+                add(
+                    text(
+                        text = secondLine,
+                        width = wrapContentSize(),
+                        fontSize = 15,
+                        margins = edgeInsets(top = 2),
+                    ).evaluate(textColor = expression<Color>(SUB_COLOR_EXPR)),
+                )
+            }
+            if (body != null) {
+                add(
+                    container(
+                        width = matchParentSize(),
+                        margins = edgeInsets(top = 10),
+                        items = listOf(body),
+                    ),
+                )
+            }
+            if (subtitle != null) {
+                add(
+                    text(
+                        text = subtitle,
+                        width = wrapContentSize(),
+                        fontSize = 13,
+                        margins = edgeInsets(top = 8),
+                    ).evaluate(textColor = expression<Color>(SUB_COLOR_EXPR)),
+                )
+            }
+        },
     )
+
+    private fun DivScope.markerScale(fraction: Double, gradientHex: List<String>): Div {
+        val offset = (fraction.coerceIn(0.0, 1.0) * (SCALE_W - MARKER_W)).roundToInt()
+        return container(
+            orientation = overlap,
+            width = fixedSize(SCALE_W),
+            height = fixedSize(16),
+            items = listOf(
+                container(
+                    // gradient track
+                    width = matchParentSize(),
+                    height = fixedSize(6),
+                    alignmentVertical = center,
+                    border = border(cornerRadius = 3),
+                    background = listOf(
+                        linearGradient(
+                            angle = 0,
+                            colors = gradientHex.map { valueArrayElement(color(it)) },
+                        ),
+                    ),
+                ),
+                container(
+                    // marker (white bar)
+                    width = fixedSize(MARKER_W),
+                    height = fixedSize(16),
+                    margins = edgeInsets(start = offset),
+                    border = border(cornerRadius = 2),
+                    background = listOf(solidBackground(color("#FFFFFFFF"))),
+                ),
+            ),
+        )
+    }
 
     private fun DivScope.fab(glyph: String, act: Action?): Div = text(
         text = glyph,
@@ -543,11 +658,18 @@ class WeatherMainRenderer(
         const val TITLE_COLOR_EXPR = "@{theme == 'dark' ? '#FFFFFFFF' : '#FF1C1C1E'}"
         const val SUB_COLOR_EXPR = "@{theme == 'dark' ? '#FF9E9EA3' : '#FF6E6E73'}"
         const val CARD_BG_EXPR = "@{theme == 'dark' ? '#CC1C1C1E' : '#CCFFFFFF'}"
+        const val HEADER_SCRIM_EXPR = "@{theme == 'dark' ? '#99000000' : '#99FFFFFF'}"
 
         // header_state ("full"/"collapsed") is a global card variable owned/written by the
         // native client (Worktree C); this card only references it by name via
         // state_id_variable, never declares it (see headerState above).
         const val HEADER_STATE_VAR = "header_state"
+
+        // Fixed dp reserved at the top of the scrollable gallery so its content starts below the
+        // EXPANDED header, which now overlays it instead of sharing a layout column (see
+        // headerState/scrollBody above). Approximates fullHeader's own measured height
+        // (paddings + city/temp/condition/hi-lo text) — tuned against an on-device screenshot.
+        const val HEADER_EXPANDED_DP = 190
 
         const val BG_IMAGE_BASE_URL =
             "https://raw.githubusercontent.com/flattened-duck/divkit_weather_workshop/main/S3/background_"
@@ -557,6 +679,13 @@ class WeatherMainRenderer(
         // 28px low-quality JPEG preview of S3/popup_image.png (946 bytes), pinned verbatim.
         const val POPUP_PREVIEW_DATA_URL =
             "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QBMRXhpZgAATU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAHKADAAQAAAABAAAAHAAAAAD/7QA4UGhvdG9zaG9wIDMuMAA4QklNBAQAAAAAAAA4QklNBCUAAAAAABDUHYzZjwCyBOmACZjs+EJ+/8AAEQgAHAAcAwEiAAIRAQMRAf/EAB8AAAEFAQEBAQEBAAAAAAAAAAABAgMEBQYHCAkKC//EALUQAAIBAwMCBAMFBQQEAAABfQECAwAEEQUSITFBBhNRYQcicRQygZGhCCNCscEVUtHwJDNicoIJChYXGBkaJSYnKCkqNDU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6g4SFhoeIiYqSk5SVlpeYmZqio6Slpqeoqaqys7S1tre4ubrCw8TFxsfIycrS09TV1tfY2drh4uPk5ebn6Onq8fLz9PX29/j5+v/EAB8BAAMBAQEBAQEBAQEAAAAAAAABAgMEBQYHCAkKC//EALURAAIBAgQEAwQHBQQEAAECdwABAgMRBAUhMQYSQVEHYXETIjKBCBRCkaGxwQkjM1LwFWJy0QoWJDThJfEXGBkaJicoKSo1Njc4OTpDREVGR0hJSlNUVVZXWFlaY2RlZmdoaWpzdHV2d3h5eoKDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uLj5OXm5+jp6vLz9PX29/j5+v/bAEMAExMTExMTIBMTIC0gICAtPS0tLS09TT09PT09TV1NTU1NTU1dXV1dXV1dXXBwcHBwcIODg4ODk5OTk5OTk5OTk//bAEMBFxgYJSMlQCMjQJloVWiZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmf/dAAQAAv/aAAwDAQACEQMRAD8A2NV1SexmWOJFYMuec+tZ8evXsjbVjT9f8afry7rlD/sf1NZ1mywyhmHSurkXs7panO5vntc2JtU1GFdzxIB+P+Nb8LmWFJDwWUE/iK568uo5Yto5Jrftv+PeL/cX+VcsW3G8lY30vZM//9DT1hN06f7v9TWR5Zrtmjjfl1B+opvkQ/3F/IV0wrJK1jnnRbd7nGeWa7K3/wBRH/uj+VL5EP8AcX8hUoAAwKipUUuhVOm47s//2Q=="
+
+        const val SCALE_W = 120
+        const val MARKER_W = 4
+        const val PRESS_MIN = 980
+        const val PRESS_MAX = 1040
+        val UV_SCALE_HEX = listOf("#FF34C759", "#FFFFCC00", "#FFFF9500", "#FFFF3B30", "#FFAF52DE")
+        val PRESS_SCALE_HEX = listOf("#FF5AC8FA", "#FF34C759", "#FFFF9500")
 
         fun conditionEmoji(condition: ConditionCode): String = when (condition) {
             ConditionCode.CLEAR -> "☀️"

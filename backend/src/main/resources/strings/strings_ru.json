@@ -57,5 +57,13 @@
   "city.search.placeholder": "Поиск города",
   "city.search.empty": "Ничего не найдено",
   "settings.city.label": "Город",
-  "city.search.button": "Найти"
+  "city.search.button": "Найти",
+  "feels.similar": "Примерно как фактическая температура",
+  "feels.warmer": "Ощущается теплее, чем на самом деле",
+  "feels.cooler": "Ощущается холоднее, чем на самом деле",
+  "vis.perfect": "Идеальная видимость",
+  "vis.good": "Хорошая видимость",
+  "vis.reduced": "Пониженная видимость",
+  "precip.subtitle": "Вероятность осадков сегодня",
+  "card.sunrise_at": "Восход в"
 }
