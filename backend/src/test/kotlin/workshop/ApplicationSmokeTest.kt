@@ -130,5 +130,34 @@ class ApplicationSmokeTest {
         assertTrue(body.contains("sun_phase"), "Must contain the sun_phase custom element")
         assertTrue(body.contains("main_scroll"), "Must contain the main_scroll gallery id")
         assertTrue(body.contains("background_cloudy_day.png"), "Must contain the mock bg image")
+        // Cross-worktree glue with the client (Worktree C): the scroll extension + custom_props keys.
+        assertTrue(body.contains("scroll_state"), "Must carry the scroll_state extension for header collapse")
+        assertTrue(body.contains("\"sunrise\""), "sun_phase custom_props must carry the sunrise key")
+        assertTrue(body.contains("\"sunset\""), "sun_phase custom_props must carry the sunset key")
+        // Read-global guard: header_collapsed is READ in an expression but NOT declared as a local
+        // variable here (the client declares it globally). A local declaration would shadow the
+        // global and silently break the header collapse — lock that decision in.
+        assertTrue(body.contains("@{header_collapsed"), "header_collapsed must be read in the state expression")
+        assertFalse(
+            body.contains("\"name\":\"header_collapsed\""),
+            "header_collapsed must NOT be declared as a local variable (client owns it globally)",
+        )
+    }
+
+    @Test
+    fun `settings screen wires the city-search input`() = testApplication {
+        application { module() }
+        val resp = client.get("/document?lang=ru")
+        assertEquals(HttpStatusCode.OK, resp.status)
+        val body = resp.bodyAsText()
+        // Cross-worktree glue with the client (Worktree C): input variable, change trigger, action,
+        // and the initially-empty DivPatch target container.
+        assertTrue(body.contains("city_query"), "Settings input must bind the city_query variable")
+        assertTrue(body.contains("\"on_variable\""), "Must fire the search on city_query change (on_variable trigger)")
+        assertTrue(
+            body.contains("weather-app://city_search?q=@{city_query}"),
+            "Must carry the city_search action with the substituted query",
+        )
+        assertTrue(body.contains("city_search_results"), "Must contain the DivPatch target container id")
     }
 }
