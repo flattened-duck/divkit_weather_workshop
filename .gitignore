@@ -12,6 +12,7 @@ talk/render*/
 # Gradle / Android / IntelliJ (app & backend, once built)
 **/build/
 **/.gradle/
+**/.kotlin/
 local.properties
 *.iml
 .idea/
