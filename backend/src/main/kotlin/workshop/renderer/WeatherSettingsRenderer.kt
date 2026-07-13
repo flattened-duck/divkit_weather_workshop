@@ -19,13 +19,11 @@ import divkit.dsl.gallery
 import divkit.dsl.horizontal
 import divkit.dsl.input
 import divkit.dsl.matchParentSize
-import divkit.dsl.on_variable
 import divkit.dsl.scope.DivScope
 import divkit.dsl.single_line_text
 import divkit.dsl.solidBackground
 import divkit.dsl.stringVariable
 import divkit.dsl.text
-import divkit.dsl.trigger
 import divkit.dsl.url
 import divkit.dsl.vertical
 import divkit.dsl.wrapContentSize
@@ -67,8 +65,8 @@ class WeatherSettingsRenderer(
 
     fun render(): Pair<String, Divan> {
         val card = divan {
-            // shared "search" action: fired by the on-change trigger, the keyboard enter key,
-            // and the visible Search button — all three dispatch the identical url.
+            // shared "search" action: fired by the keyboard enter key and the visible Search
+            // button (no per-keystroke trigger — search fires only on explicit user intent).
             val searchAction = action(
                 logId = "city_search",
                 url = url("weather-app://city_search?q=@{city_query}"),
@@ -77,10 +75,6 @@ class WeatherSettingsRenderer(
             data(
                 logId = "main_settings",
                 variables = listOf(stringVariable(name = "city_query", value = "")),
-                variableTriggers = listOf(
-                    trigger(actions = listOf(searchAction), mode = on_variable)
-                        .evaluate(condition = expression<Boolean>("@{city_query != ''}")),
-                ),
                 div = container(
                     orientation = vertical,
                     width = matchParentSize(),
@@ -92,7 +86,10 @@ class WeatherSettingsRenderer(
                             orientation = vertical,
                             width = matchParentSize(),
                             height = matchParentSize(),
-                            paddings = edgeInsets(start = 16, top = 16, end = 16, bottom = 16),
+                            paddings = edgeInsets(start = 16, end = 16).evaluate(
+                                top = expression<Int>("@{16 + status_inset}"),
+                                bottom = expression<Int>("@{16 + nav_inset}"),
+                            ),
                             items = listOf(
                         // Title — theme-aware
                         text(

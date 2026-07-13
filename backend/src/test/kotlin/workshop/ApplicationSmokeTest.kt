@@ -155,14 +155,18 @@ class ApplicationSmokeTest {
         val resp = client.get("/document?lang=ru")
         assertEquals(HttpStatusCode.OK, resp.status)
         val body = resp.bodyAsText()
-        // Cross-worktree glue with the client (Worktree C): input variable, change trigger, action,
-        // and the initially-empty DivPatch target container.
+        // Cross-worktree glue with the client (Worktree C): input variable, action, and the
+        // initially-empty DivPatch target container. Search fires on button/enter only — no
+        // per-keystroke on_variable trigger (removed to stop mid-typing search churn).
         assertTrue(body.contains("city_query"), "Settings input must bind the city_query variable")
-        assertTrue(body.contains("\"on_variable\""), "Must fire the search on city_query change (on_variable trigger)")
         assertTrue(
             body.contains("weather-app://city_search?q=@{city_query}"),
             "Must carry the city_search action with the substituted query",
         )
         assertTrue(body.contains("city_search_results"), "Must contain the DivPatch target container id")
+        assertFalse(
+            body.contains("\"on_variable\""),
+            "per-keystroke on_variable trigger must be removed (search fires on button/enter only)",
+        )
     }
 }

@@ -47,7 +47,9 @@ class ScrollStateExtensionHandler(
             } else {
                 rv.computeVerticalScrollOffset()
             }
-            val collapsed = offset > thresholdPx
+            val forced = (variableController.get(COMPACT_VAR) as? Variable.BooleanVariable)
+                ?.getValue() as? Boolean ?: false
+            val collapsed = forced || offset > thresholdPx
             if (lastCollapsed[rv] != collapsed) {
                 lastCollapsed[rv] = collapsed
                 (variableController.get(HEADER_STATE_VAR) as? Variable.StringVariable)
@@ -81,6 +83,7 @@ class ScrollStateExtensionHandler(
     companion object {
         const val EXTENSION_ID = "scroll_state"
         const val HEADER_STATE_VAR = "header_state"
+        const val COMPACT_VAR = "compact"
         private const val DEFAULT_THRESHOLD_DP = 48
         private const val DEFAULT_ORIENTATION = "vertical"
     }

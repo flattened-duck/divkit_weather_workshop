@@ -72,7 +72,10 @@ class WeatherAboutRenderer(
                             orientation = vertical,
                             width = matchParentSize(),
                             height = matchParentSize(),
-                            paddings = edgeInsets(start = 16, top = 16, end = 16, bottom = 16),
+                            paddings = edgeInsets(start = 16, end = 16).evaluate(
+                                top = expression<Int>("@{16 + status_inset}"),
+                                bottom = expression<Int>("@{16 + nav_inset}"),
+                            ),
                             items = listOf(
                         // Title — theme-aware
                         text(

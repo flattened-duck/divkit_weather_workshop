@@ -5,6 +5,7 @@ import divkit.dsl.Color
 import divkit.dsl.Div
 import divkit.dsl.Divan
 import divkit.dsl.EdgeInsets
+import divkit.dsl.Url
 import divkit.dsl.Visibility
 import divkit.dsl.action
 import divkit.dsl.actionSetStoredValue
@@ -52,6 +53,7 @@ import workshop.proto.WeatherDataOuterClass.ConditionCode
 import workshop.proto.WeatherDataOuterClass.DailyPoint
 import workshop.proto.WeatherDataOuterClass.HourlyPoint
 import workshop.proto.WeatherDataOuterClass.WeatherData
+import workshop.weather.bgBase
 
 class WeatherMainRenderer(
     private val weatherData: WeatherData,
@@ -184,19 +186,25 @@ class WeatherMainRenderer(
             items = listOf(popupCard),
         ).evaluate(visibility = expression<Visibility>(visExpr))
 
-        // ---- Layer 0: full-screen weather background, server-computed from current.bgKey ----
+        // ---- Layer 0: full-screen weather background, theme-driven day/night photo swap ----
+        // Selects the _day vs _night photo of the SAME condition base; no real time-of-day
+        // dependency. Light theme -> day photo, dark theme -> night photo.
+        val bgBaseName = bgBase(current.condition)
+        val bgDayUrl = "$BG_IMAGE_BASE_URL${bgBaseName}_day.png"
+        val bgNightUrl = "$BG_IMAGE_BASE_URL${bgBaseName}_night.png"
+        val bgUrlExpr = "@{theme == 'dark' ? '$bgNightUrl' : '$bgDayUrl'}"
         val backgroundImage = image(
-            imageUrl = url("$BG_IMAGE_BASE_URL${current.bgKey}.png"),
             width = matchParentSize(),
             height = matchParentSize(),
             scale = fill,
-        )
+        ).evaluate(imageUrl = expression<Url>(bgUrlExpr))
 
         // ---- Layer 1: pinned collapsible header + scroll body ----
         val fullHeader = container(
             orientation = vertical,
             width = matchParentSize(),
-            paddings = edgeInsets(top = 24, start = 20, end = 20, bottom = 8),
+            paddings = edgeInsets(start = 20, end = 20, bottom = 8)
+                .evaluate(top = expression<Int>("@{24 + status_inset}")),
             transitionIn = fadeTransition(duration = 250),
             transitionOut = fadeTransition(duration = 250),
             items = listOf(
@@ -242,7 +250,9 @@ class WeatherMainRenderer(
         val compactHeader = container(
             orientation = vertical,
             width = matchParentSize(),
-            paddings = edgeInsets(top = 12, start = 20, end = 20, bottom = 8),
+            paddings = edgeInsets(start = 20, end = 20, bottom = 8)
+                .evaluate(top = expression<Int>("@{12 + status_inset}")),
+            background = listOf(solidBackground().evaluate(color = expression<Color>(HEADER_SCRIM_EXPR))),
             transitionIn = fadeTransition(duration = 250),
             transitionOut = fadeTransition(duration = 250),
             items = listOf(
@@ -272,8 +282,11 @@ class WeatherMainRenderer(
         // vertical column with it: a collapse-driven height change here must NOT re-layout
         // scrollBody, or the resulting scroll-offset shift flips the scroll_state collapse
         // threshold back and forth (collapse/expand feedback loop = jitter). See scrollBody's
-        // top padding (HEADER_EXPANDED_DP) for the matching reserved space, and the root
+        // top padding (HEADER_COMPACT_DP) for the matching reserved space, and the root
         // overlap's item order below.
+        // The scrim lives on compactHeader only (see above) — fullHeader stays fully
+        // transparent over the background photo (iOS large-title look); this wrapper carries
+        // no background of its own.
         val headerState = state(
             id = "header",
             defaultStateId = "full",
@@ -286,7 +299,6 @@ class WeatherMainRenderer(
             width = matchParentSize(),
             height = wrapContentSize(),
             alignmentVertical = top,
-            background = listOf(solidBackground().evaluate(color = expression<Color>(HEADER_SCRIM_EXPR))),
         )
 
         val hourlyGallery = gallery(
@@ -386,18 +398,23 @@ class WeatherMainRenderer(
             ),
         )
 
-        // The gallery's top padding reserves space for the EXPANDED header, which now overlays
-        // it (see headerOverlay below) instead of sitting above it in a shared vertical column.
-        // Decoupling them stops the collapse-driven header resize from re-laying-out (and thus
-        // re-scrolling) the gallery beneath it, which used to cause a collapse/expand feedback
-        // loop via the scroll_state threshold (jitter).
+        // The gallery's top padding reserves space for the COMPACT header height, which now
+        // overlays it (see headerState above) instead of sitting above it in a shared vertical
+        // column. Decoupling them stops the collapse-driven header resize from re-laying-out
+        // (and thus re-scrolling) the gallery beneath it, which used to cause a collapse/expand
+        // feedback loop via the scroll_state threshold (jitter). In expanded/normal mode the
+        // transparent full header intentionally overlaps the first ~114dp of content — the
+        // iOS large-title look, not a bug.
         val scrollBody = gallery(
             id = "main_scroll",
             orientation = vertical,
             extensions = listOf(extension(id = "scroll_state", params = mapOf("orientation" to "vertical"))),
             width = matchParentSize(),
             height = matchParentSize(),
-            paddings = edgeInsets(start = 16, top = HEADER_EXPANDED_DP, end = 16, bottom = 96),
+            paddings = edgeInsets(start = 16, end = 16).evaluate(
+                top = expression<Int>("@{$HEADER_COMPACT_DP + status_inset}"),
+                bottom = expression<Int>("@{96 + nav_inset}"),
+            ),
             items = listOf(hourlyGallery, weeklyBlock, sunsetCard, detailsGrid),
         )
 
@@ -408,7 +425,7 @@ class WeatherMainRenderer(
             height = wrapContentSize(),
             alignmentVertical = bottom,
             contentAlignmentHorizontal = center,
-            paddings = edgeInsets(bottom = 20),
+            paddings = edgeInsets().evaluate(bottom = expression<Int>("@{20 + nav_inset}")),
             items = listOf(
                 fab("⚙️", action(logId = "fab_settings", url = url("weather-app://navigate?screen=settings"))),
                 fab("☰", action(logId = "fab_about", url = url("weather-app://navigate?screen=about"))),
@@ -431,8 +448,8 @@ class WeatherMainRenderer(
         orientation = vertical,
         width = fixedSize(64),
         paddings = edgeInsets(start = 8, top = 8, end = 8, bottom = 8),
-        background = listOf(solidBackground(color("#22FFFFFF"))),
-        border = border(cornerRadius = 14),
+        background = listOf(solidBackground().evaluate(color = expression<Color>(CARD_BG_EXPR))),
+        border = border(cornerRadius = 16),
         contentAlignmentHorizontal = center,
         items = listOf(
             text(
@@ -665,11 +682,13 @@ class WeatherMainRenderer(
         // state_id_variable, never declares it (see headerState above).
         const val HEADER_STATE_VAR = "header_state"
 
-        // Fixed dp reserved at the top of the scrollable gallery so its content starts below the
-        // EXPANDED header, which now overlays it instead of sharing a layout column (see
-        // headerState/scrollBody above). Approximates fullHeader's own measured height
-        // (paddings + city/temp/condition/hi-lo text) — tuned against an on-device screenshot.
-        const val HEADER_EXPANDED_DP = 190
+        // Dp reserved at the top of the scrollable gallery so content always starts below the
+        // COMPACT header, which now overlays it instead of sharing a layout column (see
+        // headerState/scrollBody above). Approximates compactHeader's own measured height
+        // (paddings + one/two-line text) — tuned against an on-device screenshot. In normal
+        // (expanded) mode the transparent full header intentionally overlaps content using this
+        // same reserved space (iOS large-title look).
+        const val HEADER_COMPACT_DP = 76
 
         const val BG_IMAGE_BASE_URL =
             "https://raw.githubusercontent.com/flattened-duck/divkit_weather_workshop/main/S3/background_"
