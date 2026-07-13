@@ -37,9 +37,9 @@ class ScrollStateExtensionHandler(
         val rv = view as? RecyclerView ?: return
 
         val params = div.extensions?.first { it.id == EXTENSION_ID }?.params
-        val thresholdDp = params?.optInt("threshold_dp", DEFAULT_THRESHOLD_DP) ?: DEFAULT_THRESHOLD_DP
         val orientation = params?.optString("orientation") ?: DEFAULT_ORIENTATION
-        val thresholdPx = (thresholdDp * rv.resources.displayMetrics.density).toInt()
+        val density = rv.resources.displayMetrics.density
+        val collapsePx = (COLLAPSE_DP * density).toInt()
 
         fun updateCollapsed() {
             val offset = if (orientation == "horizontal") {
@@ -47,9 +47,24 @@ class ScrollStateExtensionHandler(
             } else {
                 rv.computeVerticalScrollOffset()
             }
+            // atTop is padding-immune: false exactly when there is no content scrolled off the top.
+            val atTop = if (orientation == "horizontal") {
+                !rv.canScrollHorizontally(-1)
+            } else {
+                !rv.canScrollVertically(-1)
+            }
             val forced = (variableController.get(COMPACT_VAR) as? Variable.BooleanVariable)
                 ?.getValue() as? Boolean ?: false
-            val collapsed = forced || offset > thresholdPx
+            // Hysteresis without an offset-based expand threshold: collapse when scrolled past
+            // collapsePx (offset is clean while the header is still expanded); once collapsed, stay
+            // collapsed until we're back at the very top (canScrollVertically(-1)==false). This
+            // avoids the offset corruption caused by the reactive top-padding shift on collapse.
+            val prev = lastCollapsed[rv] ?: false
+            val collapsed = forced || when {
+                atTop -> false
+                prev -> true
+                else -> offset > collapsePx
+            }
             if (lastCollapsed[rv] != collapsed) {
                 lastCollapsed[rv] = collapsed
                 (variableController.get(HEADER_STATE_VAR) as? Variable.StringVariable)
@@ -60,6 +75,13 @@ class ScrollStateExtensionHandler(
         val listener = object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 updateCollapsed()
+            }
+
+            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                // onScrolled isn't guaranteed to fire at the exact rest position after a fling,
+                // so re-evaluate when scrolling settles — this reliably expands the header once
+                // the list comes to rest at the very top.
+                if (newState == RecyclerView.SCROLL_STATE_IDLE) updateCollapsed()
             }
         }
         rv.addOnScrollListener(listener)
@@ -84,7 +106,9 @@ class ScrollStateExtensionHandler(
         const val EXTENSION_ID = "scroll_state"
         const val HEADER_STATE_VAR = "header_state"
         const val COMPACT_VAR = "compact"
-        private const val DEFAULT_THRESHOLD_DP = 48
+        // Collapse when scrolled past COLLAPSE_DP; expand only when back at the very top
+        // (canScrollVertically(-1)==false), which is immune to the reactive top-padding shift.
+        private const val COLLAPSE_DP = 140
         private const val DEFAULT_ORIENTATION = "vertical"
     }
 }
