@@ -55,5 +55,7 @@
   "unit.wind": "km/h",
   "city.default": "Moscow",
   "city.search.placeholder": "Search city",
-  "city.search.empty": "Nothing found"
+  "city.search.empty": "Nothing found",
+  "settings.city.label": "City",
+  "city.search.button": "Search"
 }
