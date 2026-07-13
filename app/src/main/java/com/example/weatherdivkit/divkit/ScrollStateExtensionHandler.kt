@@ -11,10 +11,12 @@ import com.yandex.div2.DivBase
 import java.util.WeakHashMap
 
 /**
- * Drives the global `header_collapsed` Boolean variable from the scroll offset of the
- * `gallery`/`pager` div carrying `extensions: [{"id": "scroll_state"}]`.
+ * Drives the global `header_state` String variable ("full"/"collapsed") from the scroll offset
+ * of the `gallery`/`pager` div carrying `extensions: [{"id": "scroll_state"}]`.
  *
- * `header_collapsed` is declared once, globally, by MainActivity — this handler only writes it.
+ * `header_state` is declared once, globally, by MainActivity — this handler only writes it. The
+ * backend's `header` state div binds to it via `state_id_variable`, which DivKit's engine
+ * observes reactively (unlike a `default_state_id` expression, which is evaluated once).
  */
 class ScrollStateExtensionHandler(
     private val variableController: DivVariableController,
@@ -48,7 +50,8 @@ class ScrollStateExtensionHandler(
             val collapsed = offset > thresholdPx
             if (lastCollapsed[rv] != collapsed) {
                 lastCollapsed[rv] = collapsed
-                (variableController.get(HEADER_COLLAPSED_VAR) as? Variable.BooleanVariable)?.set(collapsed)
+                (variableController.get(HEADER_STATE_VAR) as? Variable.StringVariable)
+                    ?.set(if (collapsed) "collapsed" else "full")
             }
         }
 
@@ -77,7 +80,7 @@ class ScrollStateExtensionHandler(
 
     companion object {
         const val EXTENSION_ID = "scroll_state"
-        const val HEADER_COLLAPSED_VAR = "header_collapsed"
+        const val HEADER_STATE_VAR = "header_state"
         private const val DEFAULT_THRESHOLD_DP = 48
         private const val DEFAULT_ORIENTATION = "vertical"
     }

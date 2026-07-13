@@ -312,7 +312,7 @@ Added in Stage 0 (`backend/**` only; no `app/**` changes yet — client consumpt
 |---|---|---|---|
 | DivCustom sun phase | `custom_type: "sun_phase"` | native (C) | main JSON (A) |
 | Scroll-state extension | `id: "scroll_state"` | native (C) | gallery JSON (A) |
-| Header-collapsed var | `header_collapsed` (Boolean) | extension (C) | header exprs (A) |
+| Header state var | `header_state` (String, "full"\|"collapsed") | extension (C) | header `state_id_variable` (A) |
 | Weather bg key | `bg_key` (String, §bg grammar) | backend data (Stage 0) | image underlay (A) |
 | Set-city action | `weather-app://set_city?lat=&lon=&name=` | UI (B) | handler (C) |
 | City-search action | `weather-app://city_search?q=` | input (B) | handler (C) → DivPatch |

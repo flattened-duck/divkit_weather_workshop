@@ -23,6 +23,8 @@ import com.yandex.div2.DivData
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import java.net.Proxy
 
 class MainActivity : AppCompatActivity() {
 
@@ -32,7 +34,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var themeModeVar: Variable.StringVariable
     private lateinit var themeVar: Variable.StringVariable
     private lateinit var compactVar: Variable.BooleanVariable
-    private lateinit var headerCollapsedVar: Variable.BooleanVariable
+    private lateinit var headerStateVar: Variable.StringVariable
 
     /** Currently rendered screens map. Replaced atomically on refetch. */
     private var screens: Map<Screen, DivData> = emptyMap()
@@ -42,6 +44,16 @@ class MainActivity : AppCompatActivity() {
 
     /** Back stack: each entry is a screen we can go back to. */
     private val backStack = mutableListOf<Screen>()
+
+    // The Android emulator's DHCP configures an HTTP proxy (Wi-Fi AP config, 10.0.2.2:8888).
+    // Coil's network fetcher builds its own OkHttpClient by default and picks that proxy up,
+    // breaking image loads from raw.githubusercontent.com. Bypass it the same way
+    // DocumentLoader already does for the backend.
+    private val imageHttpClient by lazy(LazyThreadSafetyMode.PUBLICATION) {
+        OkHttpClient.Builder()
+            .proxy(Proxy.NO_PROXY)
+            .build()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,11 +68,11 @@ class MainActivity : AppCompatActivity() {
         themeModeVar = Variable.StringVariable("theme_mode", themeMode)
         themeVar = Variable.StringVariable("theme", effective)
         compactVar = Variable.BooleanVariable("compact", compact)
-        headerCollapsedVar = Variable.BooleanVariable("header_collapsed", false)
+        headerStateVar = Variable.StringVariable("header_state", "full")
         variableController = DivVariableController()
-        variableController.declare(themeModeVar, themeVar, compactVar, headerCollapsedVar)
+        variableController.declare(themeModeVar, themeVar, compactVar, headerStateVar)
 
-        divConfiguration = DivConfiguration.Builder(CoilDivImageLoader(this))
+        divConfiguration = DivConfiguration.Builder(CoilDivImageLoader(this, imageHttpClient))
             .actionHandler(WeatherDivActionHandler(
                 ::showScreen, ::goBack, ::onSetLang, ::onSetTheme, ::onSetCompact,
                 ::onCitySearch, ::onSetCity))

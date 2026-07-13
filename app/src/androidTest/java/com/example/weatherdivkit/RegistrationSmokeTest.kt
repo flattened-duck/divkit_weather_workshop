@@ -54,7 +54,7 @@ class RegistrationSmokeTest {
 
         scenario!!.onActivity { activity ->
             val variableController = DivVariableController().apply {
-                declare(Variable.BooleanVariable("header_collapsed", false))
+                declare(Variable.StringVariable("header_state", "full"))
             }
             val configuration = DivConfiguration.Builder(CoilDivImageLoader(activity))
                 .divVariableController(variableController)
