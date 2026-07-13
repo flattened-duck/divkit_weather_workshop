@@ -411,8 +411,15 @@ class WeatherMainRenderer(
             extensions = listOf(extension(id = "scroll_state", params = mapOf("orientation" to "vertical"))),
             width = matchParentSize(),
             height = matchParentSize(),
+            // Constant top padding = full-header height. Content always starts under the FULL
+            // header at the top (no overlap). When collapsed the user is already scrolled past
+            // this reserved band (it has scrolled off-screen), so content sits under the compact
+            // header with no gap. The extension expands the header whenever the list is back at
+            // the top (canScrollVertically(-1)==false), so the "collapsed + at-top" gap state is
+            // never reachable. A reactive top padding was tried but re-layouts unreliably in the
+            // gallery (overlap on expand-at-top), so a constant is used.
             paddings = edgeInsets(start = 16, end = 16).evaluate(
-                top = expression<Int>("@{$HEADER_COMPACT_DP + status_inset}"),
+                top = expression<Int>("@{$HEADER_EXPANDED_DP + status_inset}"),
                 bottom = expression<Int>("@{96 + nav_inset}"),
             ),
             items = listOf(hourlyGallery, weeklyBlock, sunsetCard, detailsGrid),
@@ -689,6 +696,7 @@ class WeatherMainRenderer(
         // (expanded) mode the transparent full header intentionally overlaps content using this
         // same reserved space (iOS large-title look).
         const val HEADER_COMPACT_DP = 76
+        const val HEADER_EXPANDED_DP = 210
 
         const val BG_IMAGE_BASE_URL =
             "https://raw.githubusercontent.com/flattened-duck/divkit_weather_workshop/main/S3/background_"
