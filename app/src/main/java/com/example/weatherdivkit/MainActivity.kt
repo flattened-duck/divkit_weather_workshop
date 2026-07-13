@@ -6,16 +6,19 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.weatherdivkit.databinding.ActivityMainBinding
 import com.example.weatherdivkit.divkit.DocumentLoader
+import com.example.weatherdivkit.divkit.ScrollStateExtensionHandler
+import com.example.weatherdivkit.divkit.SunPhaseCustomViewAdapter
 import com.yandex.div.DivDataTag
+import com.yandex.div.coil.CoilDivImageLoader
 import com.yandex.div.core.Div2Context
 import com.yandex.div.core.DivConfiguration
 import com.yandex.div.core.expression.variables.DivVariableController
 import com.yandex.div.core.view2.Div2View
 import com.yandex.div.data.Variable
-import com.yandex.div.picasso.PicassoDivImageLoader
 import com.yandex.div2.DivData
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -29,6 +32,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var themeModeVar: Variable.StringVariable
     private lateinit var themeVar: Variable.StringVariable
     private lateinit var compactVar: Variable.BooleanVariable
+    private lateinit var headerCollapsedVar: Variable.BooleanVariable
 
     /** Currently rendered screens map. Replaced atomically on refetch. */
     private var screens: Map<Screen, DivData> = emptyMap()
@@ -52,14 +56,21 @@ class MainActivity : AppCompatActivity() {
         themeModeVar = Variable.StringVariable("theme_mode", themeMode)
         themeVar = Variable.StringVariable("theme", effective)
         compactVar = Variable.BooleanVariable("compact", compact)
+        headerCollapsedVar = Variable.BooleanVariable("header_collapsed", false)
         variableController = DivVariableController()
-        variableController.declare(themeModeVar, themeVar, compactVar)
+        variableController.declare(themeModeVar, themeVar, compactVar, headerCollapsedVar)
 
-        divConfiguration = DivConfiguration.Builder(PicassoDivImageLoader(this))
-            .actionHandler(WeatherDivActionHandler(::showScreen, ::goBack, ::onSetLang, ::onSetTheme, ::onSetCompact))
+        divConfiguration = DivConfiguration.Builder(CoilDivImageLoader(this))
+            .actionHandler(WeatherDivActionHandler(
+                ::showScreen, ::goBack, ::onSetLang, ::onSetTheme, ::onSetCompact,
+                ::onCitySearch, ::onSetCity))
             .divVariableController(variableController)
+            .divCustomContainerViewAdapter(SunPhaseCustomViewAdapter())
+            .extension(ScrollStateExtensionHandler(variableController))
             .visualErrorsEnabled(true)
             .build()
+
+        applyStatusBarTheme(effective)
 
         // Kick off async document loading: network-first, assets as offline fallback.
         val lang = readLangPref()
@@ -75,6 +86,17 @@ class MainActivity : AppCompatActivity() {
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() = goBack()
         })
+    }
+
+    // -------------------------------------------------------------------------
+    // Status bar theming — icon contrast follows the effective theme.
+    // -------------------------------------------------------------------------
+
+    private fun applyStatusBarTheme(effectiveTheme: String) {
+        val controller = WindowCompat.getInsetsController(window, window.decorView)
+        val light = effectiveTheme == "light"
+        controller.isAppearanceLightStatusBars = light
+        controller.isAppearanceLightNavigationBars = light
     }
 
     // -------------------------------------------------------------------------
@@ -95,6 +117,36 @@ class MainActivity : AppCompatActivity() {
     }
 
     // -------------------------------------------------------------------------
+    // City search / selection
+    // (weather-app://city_search?q= and weather-app://set_city?lat=&lon=&name=)
+    // -------------------------------------------------------------------------
+
+    /** Off-main fetch of the `/city-search` DivPatch, applied on the main thread to the firing view. */
+    private fun onCitySearch(query: String, view: Div2View) {
+        val lang = readLangPref()
+        lifecycleScope.launch(Dispatchers.IO) {
+            val patch = DocumentLoader(this@MainActivity).loadCitySearch(query, lang)
+            withContext(Dispatchers.Main) {
+                if (patch != null) view.applyPatch(patch)
+                else Log.w(TAG, "city_search patch null (q='$query')")
+            }
+        }
+    }
+
+    /** Persist the selected city, then refetch the document like [onSetLang]. */
+    private fun onSetCity(lat: String, lon: String, name: String) {
+        saveCity(lat, lon, name)
+        val lang = readLangPref()
+        lifecycleScope.launch(Dispatchers.IO) {
+            val rawScreens = loadDocument(lang)
+            withContext(Dispatchers.Main) {
+                screens = buildScreensMap(rawScreens)
+                renderScreen(currentScreen)
+            }
+        }
+    }
+
+    // -------------------------------------------------------------------------
     // Theme / compact — reactive div variables (triggered by weather-app://set_theme, set_compact)
     // -------------------------------------------------------------------------
 
@@ -102,6 +154,7 @@ class MainActivity : AppCompatActivity() {
         getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().putString(PREF_THEME_MODE, mode).apply()
         themeModeVar.set(mode)
         themeVar.set(resolveEffectiveTheme(mode))
+        applyStatusBarTheme(resolveEffectiveTheme(mode))
     }
 
     private fun onSetCompact(value: Boolean) {
@@ -123,6 +176,7 @@ class MainActivity : AppCompatActivity() {
             val dark = (newConfig.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
                 Configuration.UI_MODE_NIGHT_YES
             themeVar.set(if (dark) "dark" else "light")
+            applyStatusBarTheme(if (dark) "dark" else "light")
         }
     }
 
@@ -135,8 +189,9 @@ class MainActivity : AppCompatActivity() {
      * Must be called off the main thread.
      */
     private fun loadDocument(lang: String): Map<String, DivData> {
+        val (lat, lon, name) = readCity()
         val loader = DocumentLoader(this)
-        val fromNetwork = loader.loadFromNetwork(lang)
+        val fromNetwork = loader.loadFromNetwork(lang, lat, lon, name)
         if (fromNetwork != null) {
             Log.i(TAG, "Using network document (lang=$lang)")
             return fromNetwork
@@ -218,6 +273,28 @@ class MainActivity : AppCompatActivity() {
             .apply()
     }
 
+    // -------------------------------------------------------------------------
+    // SharedPreferences — city persistence
+    // -------------------------------------------------------------------------
+
+    private fun readCity(): Triple<String?, String?, String?> {
+        val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return Triple(
+            prefs.getString(PREF_LAT, null),
+            prefs.getString(PREF_LON, null),
+            prefs.getString(PREF_CITY_NAME, null),
+        )
+    }
+
+    private fun saveCity(lat: String, lon: String, name: String) {
+        getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putString(PREF_LAT, lat)
+            .putString(PREF_LON, lon)
+            .putString(PREF_CITY_NAME, name)
+            .apply()
+    }
+
     private companion object {
         const val TAG = "MainActivity"
         const val PREFS_NAME = "weather_prefs"
@@ -226,5 +303,8 @@ class MainActivity : AppCompatActivity() {
         const val PREF_THEME_MODE = "pref_theme_mode"
         const val PREF_COMPACT = "pref_compact"
         const val DEFAULT_THEME_MODE = "system"
+        const val PREF_LAT = "pref_lat"
+        const val PREF_LON = "pref_lon"
+        const val PREF_CITY_NAME = "pref_city_name"
     }
 }
