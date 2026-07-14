@@ -341,7 +341,7 @@ class WeatherMainRenderer(
             height = fixedSize(120),
         )
         val sunsetCard = detailCard(
-            icon = "🌇",
+            icon = "",
             title = loc("weather.sunset", "Sunset"),
             bigValue = current.sunset,
             body = sunsetArc,
@@ -447,15 +447,15 @@ class WeatherMainRenderer(
 
         // ---- Layer 2: bottom overlay FAB row ----
         val fabRow = container(
-            orientation = horizontal,
-            width = matchParentSize(),
+            orientation = vertical,
+            width = wrapContentSize(),
             height = wrapContentSize(),
+            alignmentHorizontal = right,
             alignmentVertical = bottom,
-            contentAlignmentHorizontal = center,
-            paddings = edgeInsets().evaluate(bottom = expression<Int>("@{20 + nav_inset}")),
+            paddings = edgeInsets(end = 16).evaluate(bottom = expression<Int>("@{20 + nav_inset}")),
             items = listOf(
-                fab("⚙️", action(logId = "fab_settings", url = url("weather-app://navigate?screen=settings"))),
-                fab("☰", action(logId = "fab_about", url = url("weather-app://navigate?screen=about"))),
+                fab("⛭", action(logId = "fab_settings", url = url("weather-app://navigate?screen=settings"))),
+                fab("ℹ", action(logId = "fab_about", url = url("weather-app://navigate?screen=about"))),
             ),
         )
 
@@ -601,7 +601,7 @@ class WeatherMainRenderer(
         items = buildList {
             add(
                 text(
-                    text = "$icon  ${title.uppercase()}",
+                    text = if (icon.isBlank()) title.uppercase() else "$icon  ${title.uppercase()}",
                     width = wrapContentSize(),
                     fontSize = 12,
                 ).evaluate(textColor = expression<Color>(SUB_COLOR_EXPR)),
@@ -690,7 +690,7 @@ class WeatherMainRenderer(
         fontSize = 22,
         textAlignmentHorizontal = center,
         textAlignmentVertical = center,
-        margins = edgeInsets(start = 8, end = 8),
+        margins = edgeInsets(top = 6, bottom = 6),
         background = listOf(solidBackground(color("#CC1C1C1E"))),
         border = border(cornerRadius = 28),
         actions = if (act == null) null else listOf(act),
