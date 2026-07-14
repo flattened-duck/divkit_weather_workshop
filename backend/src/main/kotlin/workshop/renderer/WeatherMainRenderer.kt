@@ -305,6 +305,7 @@ class WeatherMainRenderer(
             orientation = horizontal,
             width = matchParentSize(),
             height = wrapContentSize(),
+            paddings = edgeInsets(start = 16, end = 16),
             itemSpacing = 12,
             items = hourly.map { hourCell(it) },
         )
@@ -312,7 +313,7 @@ class WeatherMainRenderer(
         val weeklyBlock = container(
             orientation = vertical,
             width = matchParentSize(),
-            margins = edgeInsets(top = 16),
+            margins = edgeInsets(start = 16, top = 16, end = 16),
             background = listOf(solidBackground().evaluate(color = expression<Color>(CARD_BG_EXPR))),
             border = border(cornerRadius = 16),
             paddings = edgeInsets(start = 8, top = 8, end = 8, bottom = 8),
@@ -336,7 +337,11 @@ class WeatherMainRenderer(
 
         val sunsetArc = custom(
             customType = "sun_phase",
-            customProps = mapOf("sunrise" to current.sunrise, "sunset" to current.sunset),
+            customProps = mapOf(
+                "sunrise" to current.sunrise,
+                "sunset" to current.sunset,
+                "track_color" to "#FF9E9EA3",
+            ),
             width = matchParentSize(),
             height = fixedSize(120),
         )
@@ -346,7 +351,7 @@ class WeatherMainRenderer(
             bigValue = current.sunset,
             body = sunsetArc,
             subtitle = loc("card.sunrise_at", "Sunrise at") + " " + current.sunrise,
-            margins = edgeInsets(top = 16),
+            margins = edgeInsets(start = 16, top = 16, end = 16),
         )
 
         // Two independent vertical columns (masonry) instead of a grid: each card keeps its own
@@ -409,7 +414,7 @@ class WeatherMainRenderer(
         val detailsGrid = container(
             orientation = horizontal,
             width = matchParentSize(),
-            margins = edgeInsets(top = 16),
+            margins = edgeInsets(start = 16, top = 16, end = 16),
             items = listOf(leftColumn, rightColumn),
         )
 
@@ -433,7 +438,7 @@ class WeatherMainRenderer(
             // the top (canScrollVertically(-1)==false), so the "collapsed + at-top" gap state is
             // never reachable. A reactive top padding was tried but re-layouts unreliably in the
             // gallery (overlap on expand-at-top), so a constant is used.
-            paddings = edgeInsets(start = 16, end = 16).evaluate(
+            paddings = edgeInsets().evaluate(
                 // Reserve the full-header height normally; in compact mode the header is forced
                 // compact, so reserve only the compact height (no gap). `compact` changes only on
                 // a settings toggle (never during scroll), so this reactive padding can't jitter.
