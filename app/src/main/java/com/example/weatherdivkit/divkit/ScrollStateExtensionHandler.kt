@@ -108,7 +108,7 @@ class ScrollStateExtensionHandler(
         const val COMPACT_VAR = "compact"
         // Collapse when scrolled past COLLAPSE_DP; expand only when back at the very top
         // (canScrollVertically(-1)==false), which is immune to the reactive top-padding shift.
-        private const val COLLAPSE_DP = 140
+        private const val COLLAPSE_DP = 24
         private const val DEFAULT_ORIENTATION = "vertical"
     }
 }
