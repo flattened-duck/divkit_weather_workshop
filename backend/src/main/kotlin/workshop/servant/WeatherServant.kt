@@ -8,6 +8,7 @@ import divkit.dsl.action
 import divkit.dsl.border
 import divkit.dsl.center
 import divkit.dsl.color
+import divkit.dsl.container
 import divkit.dsl.core.expression
 import divkit.dsl.divanPatch
 import divkit.dsl.edgeInsets
@@ -18,6 +19,7 @@ import divkit.dsl.patchChange
 import divkit.dsl.solidBackground
 import divkit.dsl.text
 import divkit.dsl.url
+import divkit.dsl.vertical
 import java.net.URLEncoder
 import workshop.l10n.Localizer
 import workshop.renderer.WeatherAboutRenderer
@@ -123,7 +125,26 @@ class WeatherServant(
                     )
                 }
             }
-            patch(changes = listOf(patchChange(id = "city_search_results", items = items)))
+            // A DivPatch change REPLACES the matched div with `items` (Patch.Change.id = "id of the
+            // element to be replaced"). Replacing the results container with the bare rows would
+            // discard the container AND its id, so re-target/find would break. Wrap the rows in a
+            // fresh container carrying the same id so `city_search_results` survives each patch.
+            patch(
+                changes = listOf(
+                    patchChange(
+                        id = "city_search_results",
+                        items = listOf(
+                            container(
+                                id = "city_search_results",
+                                orientation = vertical,
+                                width = matchParentSize(),
+                                margins = edgeInsets(top = 8),
+                                items = items,
+                            ),
+                        ),
+                    ),
+                ),
+            )
         }
 
         return mapper.writeValueAsString(dp.patch)

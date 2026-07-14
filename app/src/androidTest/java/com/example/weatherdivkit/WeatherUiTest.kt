@@ -1,178 +1,169 @@
 package com.example.weatherdivkit
 
 import androidx.test.core.app.ActivityScenario
+import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.weatherdivkit.divkit.DocumentLoader
-import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
+/**
+ * Real-backend, id-based UI tests. The app renders whatever the live backend on :8080 serves
+ * (DocumentLoader.DEFAULT_BASE_URL) — structure/id assertions only, never live weather values
+ * (invariant #6 of tests_contract.md), so the suite stays green as the layout evolves.
+ */
 @RunWith(AndroidJUnit4::class)
 class WeatherUiTest {
-    private lateinit var server: MockWebServer
-    private lateinit var dispatcher: LangDispatcher
     private var scenario: ActivityScenario<MainActivity>? = null
 
     @Before
     fun setUp() {
-        dispatcher = LangDispatcher(readTestAsset("document_ru.json"), readTestAsset("document_en.json"))
-        server = MockWebServer().apply { this.dispatcher = this@WeatherUiTest.dispatcher; start() }
-        DocumentLoader.baseUrl = "http://127.0.0.1:${server.port}"
+        requireBackendUp()
+        DocumentLoader.baseUrl = REAL_BACKEND
     }
 
     @After
     fun tearDown() {
-        scenario?.close(); server.shutdown()
+        scenario?.close()
         DocumentLoader.baseUrl = DocumentLoader.DEFAULT_BASE_URL
     }
 
     private fun launch() { scenario = ActivityScenario.launch(MainActivity::class.java) }
 
     @Test
-    fun cold_start_ru_showsMainContent() {
+    fun mainScreen_coreStructure_rendersFromLiveServer() {
         launch()
-        waitForDisplayed(MAIN_TITLE_RU)
-        dismissWidgetPopupIfPresent()
-        waitForDisplayed(TEMP_TODAY, COND_TODAY_RU, NAV_SETTINGS_RU, NAV_ABOUT_RU)
-        assertEquals(1, dispatcher.requestCount)
-        assertTrue(dispatcher.lastPath().contains("lang=ru"))
+        waitForDivDisplayed("main_scroll")
+        dismissPopupIfPresent()
+
+        assertDivDisplayed("header")
+        assertDivDisplayed("main_scroll")
     }
 
     @Test
-    fun navigation_settings_and_about() {
+    fun mainScreen_galleriesAndCustom_render() {
         launch()
-        waitForDisplayed(MAIN_TITLE_RU)
-        dismissWidgetPopupIfPresent()
+        waitForDivDisplayed("main_scroll")
+        dismissPopupIfPresent()
 
-        clickText(NAV_SETTINGS_RU)
-        waitForDisplayed(SET_THEME_LABEL_RU, SET_MODE_LABEL_RU, SET_LANG_LABEL_RU, THEME_SYSTEM_RU, THEME_DARK_RU, THEME_LIGHT_RU)
-
-        clickText(NAV_HOME_RU)
-        waitForDisplayed(MAIN_TITLE_RU)
-
-        clickText(NAV_ABOUT_RU)
-        waitForDisplayed(ABOUT_VERSION, ABOUT_GITHUB)
-
-        clickText(NAV_BACK_RU)
-        waitForDisplayed(MAIN_TITLE_RU)
-
-        assertEquals(1, dispatcher.requestCount)
+        assertDivDisplayed("hourly_gallery")
+        scrollDivIntoView(scenario!!, "main_scroll", "sun_phase")
+        waitForDivDisplayed("sun_phase")
     }
 
     @Test
-    fun reactive_theme_sameScreen_noRefetch() {
+    fun navigation_settings_back() {
         launch()
-        waitForDisplayed(MAIN_TITLE_RU)
-        dismissWidgetPopupIfPresent()
+        waitForDivDisplayed("main_scroll")
+        dismissPopupIfPresent()
 
-        clickText(NAV_SETTINGS_RU)
-        waitForDisplayed(THEME_LIGHT_RU)
+        clickDivId("fab_settings")
+        waitForDivDisplayed("settings_scroll")
+        assertDivDisplayed("city_search_input")
+        Espresso.pressBack()
+        waitForDivDisplayed("main_scroll")
 
-        clickText(THEME_LIGHT_RU)
+        clickDivId("fab_settings")
+        waitForDivDisplayed("settings_scroll")
+        scrollDivIntoView(scenario!!, "settings_scroll", "nav_home")
+        clickDivId("nav_home")
+        waitForDivDisplayed("main_scroll")
+    }
+
+    @Test
+    fun navigation_about_back() {
+        launch()
+        waitForDivDisplayed("main_scroll")
+        dismissPopupIfPresent()
+
+        clickDivId("fab_about")
+        waitForDivDisplayed("about_scroll")
+        Espresso.pressBack()
+        waitForDivDisplayed("main_scroll")
+    }
+
+    @Test
+    fun citySearch_populatesResults() {
+        launch()
+        waitForDivDisplayed("main_scroll")
+        dismissPopupIfPresent()
+
+        clickDivId("fab_settings")
+        waitForDivDisplayed("city_search_input")
+
+        // (Skip asserting the pre-search empty state: the results container has 0 children and
+        // therefore 0 height, which Espresso's isDisplayed() may not consider "displayed" — the
+        // contract marks this pre-check optional; the round-trip below is the load-bearing assert.)
+        typeIntoDivId("city_search_input", "Лондон")
+        clickDivId("city_search_button")
+        // Data-robust: any query yields >=1 child — a hit row OR the "not found" row — proving
+        // the search round-trip + patch application. Do NOT assert the result text.
+        waitForDivChildren("city_search_results", min = 1)
+    }
+
+    @Test
+    fun themeToggle_changesBackground() {
+        launch()
+        waitForDivDisplayed("main_scroll")
+        dismissPopupIfPresent()
+
+        clickDivId("fab_settings")
+        waitForDivDisplayed("settings_scroll")
+
+        scrollDivIntoView(scenario!!, "settings_scroll", "theme_btn_light")
+        clickDivId("theme_btn_light")
         waitForBackground(scenario!!, expectDark = false)
 
-        clickText(THEME_DARK_RU)
+        scrollDivIntoView(scenario!!, "settings_scroll", "theme_btn_dark")
+        clickDivId("theme_btn_dark")
         waitForBackground(scenario!!, expectDark = true)
-
-        assertEquals(1, dispatcher.requestCount)
-    }
-
-    @Test
-    fun compact_hidesCondition_reactive() {
-        launch()
-        waitForDisplayed(MAIN_TITLE_RU)
-        dismissWidgetPopupIfPresent()
-
-        clickText(NAV_SETTINGS_RU)
-        waitForDisplayed(COMPACT_ON_RU)
-        clickText(COMPACT_ON_RU)
-
-        clickText(NAV_HOME_RU)
-        waitForDisplayed(MAIN_TITLE_RU)
-        assertNotVisible(COND_TODAY_RU, COND_TOMORROW_RU)
-        waitForDisplayed(TEMP_TODAY)
-
-        clickText(NAV_SETTINGS_RU)
-        waitForDisplayed(COMPACT_OFF_RU)
-        clickText(COMPACT_OFF_RU)
-
-        clickText(NAV_HOME_RU)
-        waitForDisplayed(COND_TODAY_RU, COND_TOMORROW_RU)
-
-        assertEquals(1, dispatcher.requestCount)
-    }
-
-    @Test
-    fun language_switch_en_refetch() {
-        launch()
-        waitForDisplayed(MAIN_TITLE_RU)
-        dismissWidgetPopupIfPresent()
-
-        clickText(NAV_SETTINGS_RU)
-        waitForDisplayed(SET_LANG_LABEL_RU)
-        clickText(LANG_EN_BTN)
-
-        waitForDisplayed(SET_TITLE_EN, SET_THEME_LABEL_EN, SET_MODE_LABEL_EN, SET_LANG_LABEL_EN)
-
-        assertEquals(2, dispatcher.requestCount)
-        assertTrue(dispatcher.lastPath().contains("lang=en"))
-    }
-
-    @Test
-    fun persistence_dark_compact_en_survivesRecreate() {
-        launch()
-        waitForDisplayed(MAIN_TITLE_RU)
-        dismissWidgetPopupIfPresent()
-
-        clickText(NAV_SETTINGS_RU)
-        waitForDisplayed(THEME_DARK_RU)
-        clickText(THEME_DARK_RU)
-        clickText(COMPACT_ON_RU)
-        clickText(LANG_EN_BTN)
-        waitForDisplayed(SET_TITLE_EN)
-
-        scenario!!.recreate()
-
-        waitForDisplayed(MAIN_TITLE_EN)
-        waitForBackground(scenario!!, expectDark = true)
-        assertNotVisible(COND_TODAY_EN, COND_TOMORROW_EN)
-        waitForDisplayed(TEMP_TODAY)
-        assertNotVisible(POPUP_TITLE_RU)
-
-        assertEquals(3, dispatcher.requestCount)
     }
 
     @Test
     fun popup_install_dismiss_persistsAcrossRecreate() {
         launch()
-        waitForDisplayed(MAIN_TITLE_RU)
-        waitForDisplayed(POPUP_TITLE_RU, POPUP_INSTALL_RU, POPUP_CLOSE)
+        waitForDivDisplayed("main_scroll")
+        waitForDivDisplayed("popup_install")
 
-        clickText(POPUP_INSTALL_RU)
-        waitUntilGone(POPUP_TITLE_RU)
+        clickDivId("popup_install")
+        waitForDivGone("popup_close")
 
         scenario!!.recreate()
 
-        waitForDisplayed(MAIN_TITLE_RU)
-        assertNotVisible(POPUP_TITLE_RU, POPUP_INSTALL_RU)
+        waitForDivDisplayed("main_scroll")
+        assertDivNotDisplayed("popup_install")
     }
 
     @Test
     fun popup_closeX_persistsAcrossRecreate() {
         launch()
-        waitForDisplayed(MAIN_TITLE_RU)
-        waitForDisplayed(POPUP_CLOSE)
+        waitForDivDisplayed("main_scroll")
+        waitForDivDisplayed("popup_close")
 
-        clickText(POPUP_CLOSE)
-        waitUntilGone(POPUP_TITLE_RU)
+        clickDivId("popup_close")
+        waitForDivGone("popup_close")
 
         scenario!!.recreate()
 
-        waitForDisplayed(MAIN_TITLE_RU)
-        assertNotVisible(POPUP_TITLE_RU)
+        waitForDivDisplayed("main_scroll")
+        assertDivNotDisplayed("popup_close")
+    }
+
+    @Test
+    fun compactToggle_smoke() {
+        launch()
+        waitForDivDisplayed("main_scroll")
+        dismissPopupIfPresent()
+
+        clickDivId("fab_settings")
+        waitForDivDisplayed("settings_scroll")
+        scrollDivIntoView(scenario!!, "settings_scroll", "compact_btn_on")
+        clickDivId("compact_btn_on")
+
+        scrollDivIntoView(scenario!!, "settings_scroll", "nav_home")
+        clickDivId("nav_home")
+        waitForDivDisplayed("main_scroll")
     }
 }

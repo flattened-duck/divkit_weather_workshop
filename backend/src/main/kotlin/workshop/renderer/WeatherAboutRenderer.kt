@@ -130,6 +130,7 @@ class WeatherAboutRenderer(
                         // Single button: every sub-screen is reached only from main, so a
                         // separate "Back" action would be a redundant duplicate of "Home".
                         text(
+                            id = "nav_home",
                             width = wrapContentSize(),
                             text = localizer.getOrDefault("nav.main", "Home"),
                             fontSize = 16,
