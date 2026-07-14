@@ -22,6 +22,7 @@ import com.yandex.div.core.DivConfiguration
 import com.yandex.div.core.expression.variables.DivVariableController
 import com.yandex.div.core.view2.Div2View
 import com.yandex.div.data.Variable
+import com.yandex.div.shimmer.DivShimmerExtensionHandler
 import com.yandex.div2.DivData
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -105,18 +106,32 @@ class MainActivity : AppCompatActivity() {
             .divVariableController(variableController)
             .divCustomContainerViewAdapter(SunPhaseCustomViewAdapter())
             .extension(ScrollStateExtensionHandler(variableController))
+            .extension(DivShimmerExtensionHandler())
             .visualErrorsEnabled(true)
             .build()
 
         applyStatusBarTheme(effective)
 
-        // Kick off async document loading: network-first, assets as offline fallback.
+        // Two-phase cold start: phase 1 renders instantly from local data (cache, else the
+        // bundled zero skeleton) so there's never a blank screen; phase 2 swaps in fresh network
+        // data in the background once it arrives (or leaves phase 1's layout on screen if it
+        // doesn't — see onSetLang/onSetCity/onPullToRefresh for the same keep-current contract).
         val lang = readLangPref()
+        val (lat, lon, name) = readCity()
         lifecycleScope.launch(Dispatchers.IO) {
-            val rawScreens = loadDocument(lang)
+            val loader = DocumentLoader(this@MainActivity)
+            val initial = loader.loadFromCache(lang) ?: loader.loadFromAssets()
             withContext(Dispatchers.Main) {
-                screens = buildScreensMap(rawScreens)
+                screens = buildScreensMap(initial)
                 showScreen(Screen.MAIN)
+            }
+
+            val fresh = loader.loadFromNetwork(lang, lat, lon, name)
+            if (fresh != null) {
+                withContext(Dispatchers.Main) {
+                    screens = buildScreensMap(fresh)
+                    renderScreen(currentScreen)
+                }
             }
         }
 
@@ -144,12 +159,21 @@ class MainActivity : AppCompatActivity() {
     private fun onSetLang(lang: String) {
         Log.i(TAG, "Language changed to '$lang', refetching document…")
         saveLangPref(lang)
+        val (lat, lon, name) = readCity()
         lifecycleScope.launch(Dispatchers.IO) {
-            val rawScreens = loadDocument(lang)
+            // Network-only, never wipes the layout: on failure try the same-language cache
+            // (may reflect a stale city, see contract notes); if that also misses, keep
+            // whatever is currently on screen rather than falling back to the zero asset.
+            val loader = DocumentLoader(this@MainActivity)
+            val fresh = loader.loadFromNetwork(lang, lat, lon, name)
+            val rawScreens = fresh ?: loader.loadFromCache(lang)
             withContext(Dispatchers.Main) {
-                screens = buildScreensMap(rawScreens)
-                // Re-render the current screen in the new language.
-                renderScreen(currentScreen)
+                if (rawScreens != null) {
+                    screens = buildScreensMap(rawScreens)
+                    renderScreen(currentScreen)
+                } else {
+                    Log.i(TAG, "Offline and no cache for lang=$lang, keeping current layout")
+                }
             }
         }
     }
@@ -168,12 +192,18 @@ class MainActivity : AppCompatActivity() {
     private fun onPullToRefresh() {
         Log.i(TAG, "Pull-to-refresh: refetching…")
         val lang = readLangPref()
+        val (lat, lon, name) = readCity()
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                val rawScreens = loadDocument(lang)
-                withContext(Dispatchers.Main) {
-                    screens = buildScreensMap(rawScreens)
-                    renderScreen(currentScreen)
+                // Network-only, keep-current on failure — never blank the screen mid-refresh.
+                val fresh = DocumentLoader(this@MainActivity).loadFromNetwork(lang, lat, lon, name)
+                if (fresh != null) {
+                    withContext(Dispatchers.Main) {
+                        screens = buildScreensMap(fresh)
+                        renderScreen(currentScreen)
+                    }
+                } else {
+                    Log.i(TAG, "Pull-to-refresh offline, keeping current layout")
                 }
             } finally {
                 withContext(Dispatchers.Main) {
@@ -200,15 +230,23 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /** Persist the selected city, then refetch the document like [onSetLang]. */
+    /**
+     * Persist the selected city, then refetch — network only, keep-current on failure. Never
+     * reads the cache here: the cache is lang-keyed, not city-keyed, so it would show the
+     * PREVIOUS city under a "successful" cache hit. Never falls back to the bundled asset either.
+     */
     private fun onSetCity(lat: String, lon: String, name: String) {
         saveCity(lat, lon, name)
         val lang = readLangPref()
         lifecycleScope.launch(Dispatchers.IO) {
-            val rawScreens = loadDocument(lang)
-            withContext(Dispatchers.Main) {
-                screens = buildScreensMap(rawScreens)
-                renderScreen(currentScreen)
+            val fresh = DocumentLoader(this@MainActivity).loadFromNetwork(lang, lat, lon, name)
+            if (fresh != null) {
+                withContext(Dispatchers.Main) {
+                    screens = buildScreensMap(fresh)
+                    renderScreen(currentScreen)
+                }
+            } else {
+                Log.i(TAG, "Offline, keeping current layout (city change not applied)")
             }
         }
     }
@@ -251,27 +289,6 @@ class MainActivity : AppCompatActivity() {
     // -------------------------------------------------------------------------
     // Document loading helpers
     // -------------------------------------------------------------------------
-
-    /**
-     * Tries network first; falls back to the bundled asset on failure.
-     * Must be called off the main thread.
-     */
-    private fun loadDocument(lang: String): Map<String, DivData> {
-        val (lat, lon, name) = readCity()
-        val loader = DocumentLoader(this)
-        val fromNetwork = loader.loadFromNetwork(lang, lat, lon, name)
-        if (fromNetwork != null) {
-            Log.i(TAG, "Using network document (lang=$lang)")
-            return fromNetwork
-        }
-        Log.i(TAG, "Network unavailable — loading bundled asset (lang=$lang)")
-        return try {
-            loader.loadFromAssets()
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to load document from assets", e)
-            emptyMap()
-        }
-    }
 
     private fun buildScreensMap(rawScreens: Map<String, DivData>): Map<Screen, DivData> =
         buildMap {
