@@ -454,7 +454,7 @@ class WeatherMainRenderer(
             alignmentVertical = bottom,
             paddings = edgeInsets(end = 16).evaluate(bottom = expression<Int>("@{20 + nav_inset}")),
             items = listOf(
-                fab("⛭", action(logId = "fab_settings", url = url("weather-app://navigate?screen=settings"))),
+                fab("⚙", action(logId = "fab_settings", url = url("weather-app://navigate?screen=settings"))),
                 fab("ℹ", action(logId = "fab_about", url = url("weather-app://navigate?screen=about"))),
             ),
         )
@@ -687,14 +687,15 @@ class WeatherMainRenderer(
         text = glyph,
         width = fixedSize(56),
         height = fixedSize(56),
-        fontSize = 22,
+        fontSize = 30,
         textAlignmentHorizontal = center,
         textAlignmentVertical = center,
         margins = edgeInsets(top = 6, bottom = 6),
-        background = listOf(solidBackground(color("#CC1C1C1E"))),
+        // Light theme: dark-gray FAB + light icon. Dark theme: light-gray FAB + dark icon.
+        background = listOf(solidBackground().evaluate(color = expression<Color>(FAB_BG_EXPR))),
         border = border(cornerRadius = 28),
         actions = if (act == null) null else listOf(act),
-    )
+    ).evaluate(textColor = expression<Color>(FAB_ICON_EXPR))
 
     private companion object {
         // "Install" widget popup re-show delay after tapping ×. Native set_stored_value TTL
@@ -704,6 +705,10 @@ class WeatherMainRenderer(
         const val TITLE_COLOR_EXPR = "@{theme == 'dark' ? '#FFFFFFFF' : '#FF1C1C1E'}"
         const val SUB_COLOR_EXPR = "@{theme == 'dark' ? '#FF9E9EA3' : '#FF6E6E73'}"
         const val CARD_BG_EXPR = "@{theme == 'dark' ? '#CC1C1C1E' : '#CCFFFFFF'}"
+
+        // FAB: light theme -> dark-gray bar + light icon; dark theme -> light-gray bar + dark icon.
+        const val FAB_BG_EXPR = "@{theme == 'dark' ? '#E6D8D8DD' : '#E63A3A3C'}"
+        const val FAB_ICON_EXPR = "@{theme == 'dark' ? '#FF1C1C1E' : '#FFFFFFFF'}"
         const val HEADER_SCRIM_EXPR = "@{theme == 'dark' ? '#99000000' : '#99FFFFFF'}"
 
         // header_state ("full"/"collapsed") is a global card variable owned/written by the
