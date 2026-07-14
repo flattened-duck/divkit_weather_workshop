@@ -106,6 +106,7 @@ class WeatherSettingsRenderer(
                             header = localizer.getOrDefault("settings.city.label", "City"),
                             items = listOf(
                                 input(
+                                    id = "city_search_input",
                                     width = matchParentSize(),
                                     height = fixedSize(44),
                                     textVariable = "city_query",
@@ -122,6 +123,7 @@ class WeatherSettingsRenderer(
                                     enterKeyActions = listOf(searchAction),
                                 ).evaluate(textColor = expression<Color>(primaryTextExpr)),
                                 text(
+                                    id = "city_search_button",
                                     width = matchParentSize(),
                                     text = localizer.getOrDefault("city.search.button", "Найти"),
                                     fontSize = 16,
@@ -154,6 +156,7 @@ class WeatherSettingsRenderer(
                                     items = listOf(
                                         // reactive: theme_mode = "system"
                                         text(
+                                            id = "theme_btn_system",
                                             width = wrapContentSize(),
                                             text = localizer.getOrDefault("settings.theme.system", "System"),
                                             fontSize = 16,
@@ -173,6 +176,7 @@ class WeatherSettingsRenderer(
                                         ),
                                         // reactive: theme_mode = "dark"
                                         text(
+                                            id = "theme_btn_dark",
                                             width = wrapContentSize(),
                                             text = localizer.getOrDefault("settings.theme.dark", "Dark"),
                                             fontSize = 16,
@@ -192,6 +196,7 @@ class WeatherSettingsRenderer(
                                         ),
                                         // reactive: theme_mode = "light"
                                         text(
+                                            id = "theme_btn_light",
                                             width = wrapContentSize(),
                                             text = localizer.getOrDefault("settings.theme.light", "Light"),
                                             fontSize = 16,
@@ -223,6 +228,7 @@ class WeatherSettingsRenderer(
                                     items = listOf(
                                         // reactive: compact = true
                                         text(
+                                            id = "compact_btn_on",
                                             width = wrapContentSize(),
                                             text = localizer.getOrDefault("settings.compact.on", "Compact"),
                                             fontSize = 16,
@@ -242,6 +248,7 @@ class WeatherSettingsRenderer(
                                         ),
                                         // reactive: compact = false
                                         text(
+                                            id = "compact_btn_off",
                                             width = wrapContentSize(),
                                             text = localizer.getOrDefault("settings.compact.off", "Normal"),
                                             fontSize = 16,
@@ -272,6 +279,7 @@ class WeatherSettingsRenderer(
                                     width = matchParentSize(),
                                     items = listOf(
                                         text(
+                                            id = "lang_btn_ru",
                                             width = wrapContentSize(),
                                             text = localizer.getOrDefault("settings.lang.ru", "Russian"),
                                             fontSize = 16,
@@ -287,6 +295,7 @@ class WeatherSettingsRenderer(
                                             ),
                                         ),
                                         text(
+                                            id = "lang_btn_en",
                                             width = wrapContentSize(),
                                             text = localizer.getOrDefault("settings.lang.en", "English"),
                                             fontSize = 16,
@@ -309,6 +318,7 @@ class WeatherSettingsRenderer(
                         // Single button: every sub-screen is reached only from main, so a
                         // separate "Back" action would be a redundant duplicate of "Home".
                         text(
+                            id = "nav_home",
                             width = wrapContentSize(),
                             text = localizer.getOrDefault("nav.main", "Home"),
                             fontSize = 16,

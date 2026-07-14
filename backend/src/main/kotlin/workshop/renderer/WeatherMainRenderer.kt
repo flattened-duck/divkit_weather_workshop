@@ -29,6 +29,7 @@ import divkit.dsl.evaluate
 import divkit.dsl.extension
 import divkit.dsl.fadeTransition
 import divkit.dsl.fill
+import divkit.dsl.fit
 import divkit.dsl.fixedSize
 import divkit.dsl.gallery
 import divkit.dsl.grid
@@ -131,11 +132,13 @@ class WeatherMainRenderer(
         )
 
         val closeX = text(
+            id = "popup_close",
             text = "×",
             width = wrapContentSize(),
             fontSize = 24,
             textColor = color("#FF8E8E93"),
             alignmentHorizontal = right,
+            alignmentVertical = top,
             actions = listOf(actCloseDelay, actCloseDismiss),
         )
         val popupImage = image(
@@ -143,9 +146,10 @@ class WeatherMainRenderer(
             preview = POPUP_PREVIEW_DATA_URL,
             width = matchParentSize(),
             height = fixedSize(140),
-            scale = fill,
+            scale = fit,
             border = border(cornerRadius = 12),
-            margins = edgeInsets(top = 8),
+            // Equal breathing room above and below the icon.
+            margins = edgeInsets(top = 12, bottom = 12),
         )
         val title = text(
             text = localizer.getOrDefault("popup.widget.title", "Add the weather widget to your home screen"),
@@ -153,9 +157,9 @@ class WeatherMainRenderer(
             fontSize = 18,
             fontWeight = bold,
             textColor = color("#FF1C1C1E"),
-            margins = edgeInsets(top = 8),
         )
         val installBtn = text(
+            id = "popup_install",
             text = localizer.getOrDefault("popup.widget.install", "Install"),
             width = matchParentSize(),
             fontSize = 16,
@@ -168,13 +172,21 @@ class WeatherMainRenderer(
             margins = edgeInsets(top = 20),
             actions = listOf(actInstallSet, actInstallDismiss),
         )
-        val popupCard = container(
+        // The close × is an overlay (top-right), NOT a flow row above the image — otherwise its
+        // line height would add extra space above the icon and the top/bottom padding around the
+        // icon wouldn't match. The content flows: image (symmetric 12/12 margins), title, button.
+        val popupContent = container(
             orientation = vertical,
+            width = matchParentSize(),
+            items = listOf(popupImage, title, installBtn),
+        )
+        val popupCard = container(
+            orientation = overlap,
             width = fixedSize(300),
             background = listOf(solidBackground(color("#FFFFFFFF"))),
             border = border(cornerRadius = 16),
             paddings = edgeInsets(start = 20, top = 16, end = 20, bottom = 20),
-            items = listOf(closeX, popupImage, title, installBtn),
+            items = listOf(popupContent, closeX),
         )
         val popupOverlay = container(
             orientation = vertical,
@@ -302,6 +314,7 @@ class WeatherMainRenderer(
         )
 
         val hourlyGallery = gallery(
+            id = "hourly_gallery",
             orientation = horizontal,
             width = matchParentSize(),
             height = wrapContentSize(),
@@ -336,6 +349,7 @@ class WeatherMainRenderer(
         }
 
         val sunsetArc = custom(
+            id = "sun_phase",
             customType = "sun_phase",
             customProps = mapOf(
                 "sunrise" to current.sunrise,
@@ -459,8 +473,8 @@ class WeatherMainRenderer(
             alignmentVertical = bottom,
             paddings = edgeInsets(end = 16).evaluate(bottom = expression<Int>("@{20 + nav_inset}")),
             items = listOf(
-                fab("⚙", action(logId = "fab_settings", url = url("weather-app://navigate?screen=settings"))),
-                fab("ℹ", action(logId = "fab_about", url = url("weather-app://navigate?screen=about"))),
+                fab("⚙", action(logId = "fab_settings", url = url("weather-app://navigate?screen=settings")), id = "fab_settings"),
+                fab("ℹ", action(logId = "fab_about", url = url("weather-app://navigate?screen=about")), id = "fab_about"),
             ),
         )
 
@@ -688,7 +702,8 @@ class WeatherMainRenderer(
         )
     }
 
-    private fun DivScope.fab(glyph: String, act: Action?): Div = text(
+    private fun DivScope.fab(glyph: String, act: Action?, id: String? = null): Div = text(
+        id = id,
         text = glyph,
         width = fixedSize(56),
         height = fixedSize(56),
