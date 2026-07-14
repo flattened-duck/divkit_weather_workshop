@@ -17,3 +17,9 @@ local.properties
 *.iml
 .idea/
 captures/
+
+# Xcode / iOS (ios/)
+**/xcuserdata/
+**/*.xcuserstate
+**/DerivedData/
+ios/**/.swiftpm/

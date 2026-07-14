@@ -1,0 +1,37 @@
+name: WeatherDivKit
+options:
+  bundleIdPrefix: com.example
+  deploymentTarget:
+    iOS: "15.0"
+  createIntermediateGroups: true
+packages:
+  DivKit:
+    path: /Users/the-leo/divkit_source/divkit/client/ios
+targets:
+  WeatherDivKit:
+    type: application
+    platform: iOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: WeatherDivKit
+    dependencies:
+      - package: DivKit
+        product: DivKit
+      - package: DivKit
+        product: DivKitExtensions
+    info:
+      path: WeatherDivKit/App/Info.plist
+      properties:
+        CFBundleDisplayName: WeatherDivKit
+        UILaunchScreen: {}
+        UIApplicationSupportsIndirectInputEvents: true
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.weatherdivkit
+        TARGETED_DEVICE_FAMILY: "1"
+        SWIFT_VERSION: "5.9"
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: NO
