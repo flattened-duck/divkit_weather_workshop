@@ -349,10 +349,13 @@ class WeatherMainRenderer(
             margins = edgeInsets(top = 16),
         )
 
-        val detailsGrid = grid(
-            columnCount = 2,
-            width = matchParentSize(),
-            margins = edgeInsets(top = 16),
+        // Two independent vertical columns (masonry) instead of a grid: each card keeps its own
+        // natural height, so cards with a scale/subtitle don't force empty space onto their row
+        // neighbours (a grid equalises row heights → voids). Cards are split across the columns
+        // to keep the two roughly balanced in height.
+        val leftColumn = container(
+            orientation = vertical,
+            width = matchParentSize(weight = 1.0),
             items = listOf(
                 detailCard(
                     icon = "🔆",
@@ -362,16 +365,32 @@ class WeatherMainRenderer(
                     body = markerScale(uvFrac, UV_SCALE_HEX),
                 ),
                 detailCard(
-                    icon = "🌡️",
-                    title = loc("feels_like", "feels like"),
-                    bigValue = "${current.feelsC}°",
-                    subtitle = feelsSubtitle,
-                ),
-                detailCard(
                     icon = "🌧️",
                     title = loc("weather.precipitation", "Precipitation"),
                     bigValue = "${daily0.precipProb}%",
                     subtitle = loc("precip.subtitle", "Chance today"),
+                ),
+                detailCard(
+                    icon = "💧",
+                    title = loc("weather.humidity", "Humidity"),
+                    bigValue = "${current.humidity}%",
+                ),
+                detailCard(
+                    icon = "💨",
+                    title = loc("weather.wind", "Wind"),
+                    bigValue = "${current.wind} " + loc("unit.wind", "km/h"),
+                ),
+            ),
+        )
+        val rightColumn = container(
+            orientation = vertical,
+            width = matchParentSize(weight = 1.0),
+            items = listOf(
+                detailCard(
+                    icon = "🌡️",
+                    title = loc("feels_like", "feels like"),
+                    bigValue = "${current.feelsC}°",
+                    subtitle = feelsSubtitle,
                 ),
                 detailCard(
                     icon = "👁️",
@@ -380,22 +399,18 @@ class WeatherMainRenderer(
                     subtitle = visSubtitle,
                 ),
                 detailCard(
-                    icon = "💧",
-                    title = loc("weather.humidity", "Humidity"),
-                    bigValue = "${current.humidity}%",
-                ),
-                detailCard(
                     icon = "🧭",
                     title = loc("weather.pressure", "Pressure"),
                     bigValue = "${current.pressure} " + loc("unit.pressure", "hPa"),
                     body = markerScale(pressFrac, PRESS_SCALE_HEX),
                 ),
-                detailCard(
-                    icon = "💨",
-                    title = loc("weather.wind", "Wind"),
-                    bigValue = "${current.wind} " + loc("unit.wind", "km/h"),
-                ),
             ),
+        )
+        val detailsGrid = container(
+            orientation = horizontal,
+            width = matchParentSize(),
+            margins = edgeInsets(top = 16),
+            items = listOf(leftColumn, rightColumn),
         )
 
         // The gallery's top padding reserves space for the COMPACT header height, which now
@@ -419,7 +434,12 @@ class WeatherMainRenderer(
             // never reachable. A reactive top padding was tried but re-layouts unreliably in the
             // gallery (overlap on expand-at-top), so a constant is used.
             paddings = edgeInsets(start = 16, end = 16).evaluate(
-                top = expression<Int>("@{$HEADER_EXPANDED_DP + status_inset}"),
+                // Reserve the full-header height normally; in compact mode the header is forced
+                // compact, so reserve only the compact height (no gap). `compact` changes only on
+                // a settings toggle (never during scroll), so this reactive padding can't jitter.
+                top = expression<Int>(
+                    "@{(compact ? $HEADER_COMPACT_DP : $HEADER_EXPANDED_DP) + status_inset}",
+                ),
                 bottom = expression<Int>("@{96 + nav_inset}"),
             ),
             items = listOf(hourlyGallery, weeklyBlock, sunsetCard, detailsGrid),
@@ -618,9 +638,11 @@ class WeatherMainRenderer(
             }
             if (subtitle != null) {
                 add(
+                    // matchParent width so a long subtitle wraps within the card instead of
+                    // being clipped to one ellipsised line.
                     text(
                         text = subtitle,
-                        width = wrapContentSize(),
+                        width = matchParentSize(),
                         fontSize = 13,
                         margins = edgeInsets(top = 8),
                     ).evaluate(textColor = expression<Color>(SUB_COLOR_EXPR)),
