@@ -327,8 +327,10 @@ class WeatherZeroRenderer(
         const val FAB_ICON_EXPR = "@{theme == 'dark' ? '#FF1C1C1E' : '#FFFFFFFF'}"
         const val BG_EXPR = "@{theme == 'dark' ? '#FF1C1C1E' : '#FFF2F2F7'}"
 
-        // .invalid TLD (RFC 2606) never resolves -> the image never loads -> the shimmer
-        // extension (which early-returns once isImageLoaded/isImagePreview) never stops.
-        const val SKELETON_IMAGE_URL = "https://divkit.invalid/skeleton.png"
+        // DivKit treats the `empty://` scheme as "no image": the image is never loaded (so the
+        // shimmer extension, which early-returns once isImageLoaded/isImagePreview, keeps
+        // animating) AND it does not count as a load error, so no visual-error badge appears
+        // (unlike a real DNS-failing URL such as an .invalid TLD).
+        const val SKELETON_IMAGE_URL = "empty://"
     }
 }
