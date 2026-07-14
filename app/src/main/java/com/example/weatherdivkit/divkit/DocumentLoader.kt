@@ -10,6 +10,7 @@ import com.yandex.div2.DivPatch
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
+import java.io.File
 import java.io.IOException
 import java.net.Proxy
 
@@ -79,7 +80,9 @@ class DocumentLoader(private val context: Context) {
                 return null
             }
             Log.i(TAG, "Loaded document from network (lang=$lang, ${body.length} bytes)")
-            parseEnvelope(JSONObject(body))
+            val parsed = parseEnvelope(JSONObject(body))
+            writeCache(lang, body)
+            parsed
         } catch (e: IOException) {
             Log.w(TAG, "Network unavailable, will fall back to assets: ${e.message}")
             null
@@ -88,6 +91,39 @@ class DocumentLoader(private val context: Context) {
             null
         }
     }
+
+    /**
+     * Reads `doc_cache_<lang>.json` (written by a prior successful [loadFromNetwork]) and parses
+     * it the same way as the network/asset paths. Returns null if the file is missing or corrupt
+     * — a corrupt cache must degrade to the bundled zero asset, never crash.
+     */
+    fun loadFromCache(lang: String): Map<String, DivData>? {
+        val file = cacheFile(lang)
+        if (!file.exists()) return null
+        return try {
+            parseEnvelope(JSONObject(file.readText()))
+        } catch (e: Exception) {
+            Log.w(TAG, "Corrupt cache for lang=$lang, ignoring", e)
+            null
+        }
+    }
+
+    /**
+     * Atomically persists a successfully-parsed network response body so [loadFromCache] can
+     * serve it offline later. A write failure must never fail the network path that just
+     * succeeded — log and move on.
+     */
+    private fun writeCache(lang: String, body: String) {
+        try {
+            val tmp = File(context.filesDir, "doc_cache_$lang.json.tmp")
+            tmp.writeText(body)
+            tmp.renameTo(cacheFile(lang))
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to write cache for lang=$lang", e)
+        }
+    }
+
+    private fun cacheFile(lang: String): File = File(context.filesDir, "doc_cache_$lang.json")
 
     /**
      * Fetches `/city-search?q=&lang=` and parses the response body as a [DivPatch]

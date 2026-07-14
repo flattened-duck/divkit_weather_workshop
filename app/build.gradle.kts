@@ -53,6 +53,7 @@ dependencies {
     implementation(libs.divkit.json)
     implementation(libs.divkit.storage)
     implementation(libs.divkit.coil)
+    implementation(libs.divkit.shimmer)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity)

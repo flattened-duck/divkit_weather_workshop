@@ -32,6 +32,7 @@ divkit-core = { group = "com.yandex.div", name = "div-core", version.ref = "divk
 divkit-json = { group = "com.yandex.div", name = "div-json", version.ref = "divkit" }
 divkit-storage = { group = "com.yandex.div", name = "div-storage", version.ref = "divkit" }
 divkit-coil = { group = "com.yandex.div", name = "coil", version.ref = "divkit" }
+divkit-shimmer = { group = "com.yandex.div", name = "div-shimmer", version.ref = "divkit" }
 androidx-recyclerview = { module = "androidx.recyclerview:recyclerview", version.ref = "recyclerview" }
 androidx-swiperefreshlayout = { module = "androidx.swiperefreshlayout:swiperefreshlayout", version.ref = "swiperefreshlayout" }
 

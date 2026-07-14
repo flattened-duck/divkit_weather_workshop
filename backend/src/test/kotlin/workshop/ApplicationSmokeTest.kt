@@ -150,6 +150,35 @@ class ApplicationSmokeTest {
     }
 
     @Test
+    fun `zero returns the skeleton envelope with no real data`() = testApplication {
+        application { module() }
+        val resp = client.get("/zero?lang=ru")
+        assertEquals(HttpStatusCode.OK, resp.status)
+        val body = resp.bodyAsText()
+        assertTrue(body.contains("\"templates\""), "Must contain 'templates' key")
+        assertTrue(body.contains("\"main\""), "Must contain 'main' screen")
+        assertTrue(body.contains("\"settings\""), "Must contain 'settings' screen")
+        assertTrue(body.contains("\"about\""), "Must contain 'about' screen")
+        assertTrue(body.contains("\"zero_skeleton\""), "main div must carry the zero_skeleton marker id")
+        assertTrue(body.contains("\"header\""), "Must keep the header state id")
+        assertTrue(body.contains("\"main_scroll\""), "Must keep the main_scroll gallery id")
+        assertTrue(body.contains("\"scroll_state\""), "Must carry the scroll_state extension")
+        assertTrue(body.contains("\"shimmer\""), "Must carry at least one shimmer extension")
+        assertTrue(body.contains("—"), "Dashes ('—') must stand in for real header data")
+        assertFalse(body.contains("17°"), "Must NOT contain a real temperature")
+        assertFalse(body.contains("Москва"), "Must NOT contain a real city name")
+    }
+
+    @Test
+    fun `zero lang=en localizes settings and about chrome`() = testApplication {
+        application { module() }
+        val resp = client.get("/zero?lang=en")
+        val body = resp.bodyAsText()
+        assertTrue(body.contains("Settings"), "English zero response must localize settings chrome")
+        assertFalse(body.contains("Настройки"), "English zero response must not contain Russian settings chrome")
+    }
+
+    @Test
     fun `settings screen wires the city-search input`() = testApplication {
         application { module() }
         val resp = client.get("/document?lang=ru")

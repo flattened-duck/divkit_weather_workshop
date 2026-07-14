@@ -37,6 +37,39 @@ fun assertDivNotDisplayed(divId: String) {
     onView(withDivId(divId)).check(matches(not(isDisplayed())))
 }
 
+/**
+ * Passes both when [divId] is absent from the view hierarchy entirely and when it's present but
+ * not displayed. Plain `onView(...).check(matches(not(isDisplayed())))` throws
+ * NoMatchingViewException in the "absent" case (Espresso's ViewFinder fails before the matcher
+ * ever runs), so callers that need to assert "this id is not on screen, whether or not it exists
+ * at all" (e.g. a marker id like `zero_skeleton` that a real-data screen never carries) must use
+ * this instead of [assertDivNotDisplayed].
+ */
+fun assertDivAbsent(divId: String) {
+    try {
+        assertDivNotDisplayed(divId)
+    } catch (e: androidx.test.espresso.NoMatchingViewException) {
+        // Not in the hierarchy at all — treated as "not displayed".
+    }
+}
+
+private fun isDivAbsentOrHiddenNow(divId: String): Boolean =
+    try { onView(withDivId(divId)).check(matches(not(isDisplayed()))); true }
+    catch (e: androidx.test.espresso.NoMatchingViewException) { true }
+    catch (t: Throwable) { false }
+
+/** Polling counterpart to [assertDivAbsent]: waits until [divId] is gone or hidden, e.g. for a
+ *  background swap (phase 2 of MainActivity's cold start) that replaces a skeleton div id which
+ *  the swapped-in real screen doesn't carry at all. */
+fun waitForDivAbsent(divId: String, timeoutMs: Long = 10_000) {
+    val end = SystemClock.uptimeMillis() + timeoutMs
+    while (SystemClock.uptimeMillis() < end) {
+        if (isDivAbsentOrHiddenNow(divId)) return
+        SystemClock.sleep(100)
+    }
+    assertDivAbsent(divId)
+}
+
 fun clickDivId(divId: String) {
     onView(withDivId(divId)).perform(click())
 }

@@ -25,6 +25,7 @@ import workshop.l10n.Localizer
 import workshop.renderer.WeatherAboutRenderer
 import workshop.renderer.WeatherMainRenderer
 import workshop.renderer.WeatherSettingsRenderer
+import workshop.renderer.WeatherZeroRenderer
 import workshop.weather.CityParam
 import workshop.weather.Geocoder
 import workshop.weather.WeatherProvider
@@ -69,6 +70,35 @@ class WeatherServant(
         }
 
         // Serialize each card (the "card" field of Divan, which is `Data` = log_id + states)
+        val envelope = mapOf(
+            "templates" to allTemplates,
+            "screens" to mapOf(
+                mainKey to mainDivan.card,
+                settingsKey to settingsDivan.card,
+                aboutKey to aboutDivan.card,
+            ),
+        )
+
+        return mapper.writeValueAsString(envelope)
+    }
+
+    /**
+     * Assembles the zero-state skeleton envelope for the MAIN screen — same shape as [handle]
+     * but with no weather fetch and no city (the skeleton carries no real data).
+     */
+    suspend fun zero(lang: String): String {
+        val localizer = localizer(lang)
+
+        val (mainKey, mainDivan) = WeatherZeroRenderer(localizer).render()
+        val (settingsKey, settingsDivan) = WeatherSettingsRenderer(localizer).render()
+        val (aboutKey, aboutDivan) = WeatherAboutRenderer(localizer).render()
+
+        val allTemplates: Map<String, Any> = buildMap {
+            putAll(mainDivan.templates)
+            putAll(settingsDivan.templates)
+            putAll(aboutDivan.templates)
+        }
+
         val envelope = mapOf(
             "templates" to allTemplates,
             "screens" to mapOf(

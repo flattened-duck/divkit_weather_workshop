@@ -31,6 +31,11 @@ fun Application.module() {
             )
         }
 
+        get("/zero") {
+            val lang = call.request.queryParameters["lang"]?.takeIf { it in listOf("ru", "en") } ?: "ru"
+            call.respondText(text = servant.zero(lang), contentType = ContentType.Application.Json)
+        }
+
         get("/weather-json") {
             val lang = call.request.queryParameters["lang"]
                 ?.takeIf { it in listOf("ru", "en") } ?: "ru"
