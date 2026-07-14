@@ -168,8 +168,13 @@ class SunPhaseView(context: Context) : View(context) {
         val f = ((nowMin - sunrise).toFloat() / (sunset - sunrise)).coerceIn(0f, 1f)
         canvas.drawArc(arcRect, 180f, f * 180f, false, arcPaint)
 
+        // The arc is an ellipse (arcRect is 2r wide × r tall → vertical semi-axis is r/2), so the
+        // marker must ride that same ellipse, not a circle of radius r — otherwise the dot drifts
+        // off the curve (worst at the ends / toward sunset). X already matches; fix Y.
+        val ry = r / 2f
+        val ellipseCy = cy - ry
         val mx = cx - r * cos(f * PI).toFloat()
-        val my = cy - r * sin(f * PI).toFloat()
+        val my = ellipseCy - ry * sin(f * PI).toFloat()
         canvas.drawCircle(mx, my, markerRadiusPx, markerPaint)
     }
 
