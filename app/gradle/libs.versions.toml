@@ -16,6 +16,7 @@ testOrchestrator = "1.6.1"
 mockwebserver = "4.12.0"
 coil = "3.1.0"
 recyclerview = "1.3.2"
+swiperefreshlayout = "1.1.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -32,6 +33,7 @@ divkit-json = { group = "com.yandex.div", name = "div-json", version.ref = "divk
 divkit-storage = { group = "com.yandex.div", name = "div-storage", version.ref = "divkit" }
 divkit-coil = { group = "com.yandex.div", name = "coil", version.ref = "divkit" }
 androidx-recyclerview = { module = "androidx.recyclerview:recyclerview", version.ref = "recyclerview" }
+androidx-swiperefreshlayout = { module = "androidx.swiperefreshlayout:swiperefreshlayout", version.ref = "swiperefreshlayout" }
 
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }

@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.res.Configuration
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -65,6 +66,12 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         WindowCompat.setDecorFitsSystemWindows(window, false)
+
+        binding.swipeRefresh.setOnRefreshListener { onPullToRefresh() }
+        // The direct child (divContainer) never scrolls itself, so the default
+        // canChildScrollUp() would let PTR fire mid-list. Delegate to the DivKit
+        // gallery ("main_scroll") that actually owns the scroll position.
+        binding.swipeRefresh.setOnChildScrollUpCallback { _, _ -> mainScrollCanScrollUp() }
 
         val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val themeMode = prefs.getString(PREF_THEME_MODE, DEFAULT_THEME_MODE) ?: DEFAULT_THEME_MODE
@@ -143,6 +150,35 @@ class MainActivity : AppCompatActivity() {
                 screens = buildScreensMap(rawScreens)
                 // Re-render the current screen in the new language.
                 renderScreen(currentScreen)
+            }
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Pull-to-refresh (main screen only — see renderScreen's isEnabled toggle)
+    // -------------------------------------------------------------------------
+
+    /**
+     * DivKit tags each div's Android view with its `id` (DivBaseBinder.applyId), so the
+     * main vertical gallery ("main_scroll") can be located and queried for scroll position.
+     */
+    private fun mainScrollCanScrollUp(): Boolean =
+        binding.divContainer.findViewWithTag<View>("main_scroll")?.canScrollVertically(-1) ?: false
+
+    private fun onPullToRefresh() {
+        Log.i(TAG, "Pull-to-refresh: refetching…")
+        val lang = readLangPref()
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val rawScreens = loadDocument(lang)
+                withContext(Dispatchers.Main) {
+                    screens = buildScreensMap(rawScreens)
+                    renderScreen(currentScreen)
+                }
+            } finally {
+                withContext(Dispatchers.Main) {
+                    binding.swipeRefresh.isRefreshing = false
+                }
             }
         }
     }
@@ -265,6 +301,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         currentScreen = screen
+        binding.swipeRefresh.isEnabled = (screen == Screen.MAIN)
 
         val divContext = Div2Context(
             baseContext = this,
