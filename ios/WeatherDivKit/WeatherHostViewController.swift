@@ -181,8 +181,18 @@ final class WeatherHostViewController: UIViewController, HostActions {
     }
 
     func citySearch(query: String) {
-        // Stage 0 stub kept: full DivPatch wiring is Stage 3A.
-        print("HostActions.citySearch(query: \(query))")
+        let lang = Persistence.lang
+        // Capture before the await: pins "apply to the firing screen" (== settings here),
+        // so a late navigation away while the fetch is in flight becomes a safe no-op.
+        let cardId = currentScreen.cardId
+        Task {
+            let patch = await DocumentLoader().loadCitySearch(query: query, lang: lang)
+            guard let patch else {
+                print("WeatherHostViewController: citySearch failed for query \"\(query)\"")
+                return
+            }
+            divView.applyPatch(patch, cardId: cardId)
+        }
     }
 
     // MARK: - Theme resolution

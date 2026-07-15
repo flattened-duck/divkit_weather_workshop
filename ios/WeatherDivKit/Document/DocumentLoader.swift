@@ -49,4 +49,39 @@ final class DocumentLoader: DocumentLoading {
 
         return DocumentBundle(sources: sources, rawBody: data)
     }
+
+    /// Fresh instance per call (Android-faithful: `onCitySearch` builds `DocumentLoader(this)`).
+    /// Off-protocol on purpose — keeps this edit isolated from the shared `loader` property.
+    func loadCitySearch(query: String, lang: String) async -> DivPatch? {
+        do {
+            guard var components = URLComponents(string: AppConfig.baseURL + "/city-search") else {
+                return nil
+            }
+            components.queryItems = [
+                URLQueryItem(name: "q", value: query),
+                URLQueryItem(name: "lang", value: lang),
+            ]
+            guard let url = components.url else { return nil }
+
+            let (data, response) = try await URLSession.shared.data(from: url)
+            guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+                return nil
+            }
+
+            guard let root = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                return nil
+            }
+
+            // Backend returns bare {"changes":[...]} at root; parseDivPatch wants {"patch": {...}}.
+            var wrapper: [String: Any] = ["patch": root]
+            if let templates = root["templates"] {
+                wrapper["templates"] = templates
+            }
+            let wrapperData = try JSONSerialization.data(withJSONObject: wrapper)
+            return try parseDivPatch(wrapperData)
+        } catch {
+            print("DocumentLoader: loadCitySearch failed: \(error)")
+            return nil
+        }
+    }
 }
