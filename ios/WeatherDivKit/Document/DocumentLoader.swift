@@ -31,6 +31,29 @@ final class DocumentLoader: DocumentLoading {
             throw DocumentLoaderError.malformed("response root is not a JSON object")
         }
 
+        let sources = try makeSources(from: root)
+        writeCache(lang: lang, data: data)
+        return DocumentBundle(sources: sources, rawBody: data)
+    }
+
+    func loadCache(lang: String) -> DocumentBundle? {
+        guard let data = try? Data(contentsOf: cacheURL(lang)) else { return nil }
+        guard let root = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+              let sources = try? makeSources(from: root) else { return nil }
+        return DocumentBundle(sources: sources, rawBody: data)
+    }
+
+    func loadBundledSkeleton() -> DocumentBundle? {
+        guard let url = Bundle.main.url(forResource: "zero_ru", withExtension: "json"),
+              let data = try? Data(contentsOf: url),
+              let root = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+              let sources = try? makeSources(from: root) else { return nil }
+        return DocumentBundle(sources: sources, rawBody: data)
+    }
+
+    // MARK: - Shared reshape
+
+    private func makeSources(from root: [String: Any]) throws -> [Screen: DivViewSource] {
         let templates = root["templates"] as? [String: Any] ?? [:]
         guard let screens = root["screens"] as? [String: Any] else {
             throw DocumentLoaderError.malformed("missing \"screens\"")
@@ -46,7 +69,17 @@ final class DocumentLoader: DocumentLoading {
             let sourceData = try JSONSerialization.data(withJSONObject: sourceDict)
             sources[screen] = DivViewSource(kind: .data(sourceData), cardId: screen.cardId)
         }
+        return sources
+    }
 
-        return DocumentBundle(sources: sources, rawBody: data)
+    // MARK: - Disk cache
+
+    private func writeCache(lang: String, data: Data) {
+        try? data.write(to: cacheURL(lang), options: .atomic)
+    }
+
+    private func cacheURL(_ lang: String) -> URL {
+        FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("doc_cache_\(lang).json")
     }
 }
