@@ -71,6 +71,13 @@ final class WeatherHostViewController: UIViewController, HostActions {
         factory.reporter = LoggingDivReporter()
         factory.urlHandler = WeatherUrlHandler(actions: self)
         globals = GlobalVariables(storage: factory.variablesStorage)
+        factory.extensionHandlers.append(
+            ScrollStateExtensionHandler(
+                variablesStorage: factory.variablesStorage,
+                hostView: { [weak self] in self?.divView }
+            )
+        )
+        factory.extensionHandlers.append(ShimmerImagePreviewExtension())
         return factory.makeComponents()
     }
 
