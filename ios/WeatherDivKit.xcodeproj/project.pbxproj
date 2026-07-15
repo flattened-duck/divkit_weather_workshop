@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		0548D5B887575514335DA1A9 /* DivKitExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = DFF7E6B73952EB7DF1A69F57 /* DivKitExtensions */; };
 		0EB68BC125C8F5D42F2676F1 /* WeatherHostViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 338A27B55C3408D9D2B73611 /* WeatherHostViewController.swift */; };
+		1037FEA58FFDA196B4863DB1 /* SunPhaseCustomBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 238FF83B0F5A1A5B02CF4E35 /* SunPhaseCustomBlock.swift */; };
 		15569029FE9212B928EA4F28 /* DivComponentsFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E47C3B7AE8B8101874BE77B /* DivComponentsFactory.swift */; };
 		20812E4588BBBB9721C2E7F3 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86A3CDAE3ECB6375CB0C5B8A /* AppConfig.swift */; };
 		3CB5077D24BB5DBA0E4287BC /* WeatherUrlHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 981F9CA71E728539DEF57FA1 /* WeatherUrlHandler.swift */; };
@@ -27,6 +28,7 @@
 		02829D394922923019ED2D44 /* Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Persistence.swift; sourceTree = "<group>"; };
 		1E0738E89ED3EF5769CD046C /* Screen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Screen.swift; sourceTree = "<group>"; };
 		22902353E366ADB72962309B /* HostActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HostActions.swift; sourceTree = "<group>"; };
+		238FF83B0F5A1A5B02CF4E35 /* SunPhaseCustomBlock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SunPhaseCustomBlock.swift; sourceTree = "<group>"; };
 		338A27B55C3408D9D2B73611 /* WeatherHostViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherHostViewController.swift; sourceTree = "<group>"; };
 		3E47C3B7AE8B8101874BE77B /* DivComponentsFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DivComponentsFactory.swift; sourceTree = "<group>"; };
 		4D1861B0BB4E8717D584B731 /* GlobalVariables.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalVariables.swift; sourceTree = "<group>"; };
@@ -60,6 +62,14 @@
 				89B1D5053049BA147DE2020D /* ios */,
 			);
 			name = Packages;
+			sourceTree = "<group>";
+		};
+		0C5E944F69EAC7714D14E5CD /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				238FF83B0F5A1A5B02CF4E35 /* SunPhaseCustomBlock.swift */,
+			);
+			path = Extensions;
 			sourceTree = "<group>";
 		};
 		1A2E198F862369B12229DE71 /* Products */ = {
@@ -127,6 +137,7 @@
 				35E1A6F81FCE821BA808781D /* Config */,
 				CCF12680C91631E40A4704A0 /* DivKitHost */,
 				1C2F875DAD42FD90B1B1E084 /* Document */,
+				0C5E944F69EAC7714D14E5CD /* Extensions */,
 			);
 			path = WeatherDivKit;
 			sourceTree = "<group>";
@@ -202,6 +213,7 @@
 				4248414EF064ADC0D899FEED /* LoggingDivReporter.swift in Sources */,
 				6D8D2246271F246C2A99E69E /* Persistence.swift in Sources */,
 				E20FE24EAE2EF6143ADD0F31 /* Screen.swift in Sources */,
+				1037FEA58FFDA196B4863DB1 /* SunPhaseCustomBlock.swift in Sources */,
 				0EB68BC125C8F5D42F2676F1 /* WeatherHostViewController.swift in Sources */,
 				3CB5077D24BB5DBA0E4287BC /* WeatherUrlHandler.swift in Sources */,
 			);

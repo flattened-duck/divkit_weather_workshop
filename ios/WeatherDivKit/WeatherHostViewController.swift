@@ -70,6 +70,7 @@ final class WeatherHostViewController: UIViewController, HostActions {
         let factory = DivComponentsFactory()
         factory.reporter = LoggingDivReporter()
         factory.urlHandler = WeatherUrlHandler(actions: self)
+        factory.customBlockFactory = SunPhaseCustomBlockFactory()
         globals = GlobalVariables(storage: factory.variablesStorage)
         return factory.makeComponents()
     }
