@@ -20,6 +20,7 @@
 		93EB80BF21C0221526EB4B6A /* DivKit in Frameworks */ = {isa = PBXBuildFile; productRef = F8EFBF67AD49B4B58F2BF95B /* DivKit */; };
 		AD76CE966F578A7385D65443 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4584055A66642A142887E29 /* AppDelegate.swift */; };
 		B8951215B4DF937F83D2A47B /* GlobalVariables.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D1861B0BB4E8717D584B731 /* GlobalVariables.swift */; };
+		B932FD2CA503BC6643119FCE /* zero_ru.json in Resources */ = {isa = PBXBuildFile; fileRef = B47D2F058F0DD24E789FC5A8 /* zero_ru.json */; };
 		D5A6E12BF0634583370312A4 /* DocumentLoading.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AA48C4F8A142406C4E8F1B /* DocumentLoading.swift */; };
 		D6160272EF4C8899B78E4123 /* ScrollStateExtensionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75E238A661A66C09D0CF5A03 /* ScrollStateExtensionHandler.swift */; };
 		E20FE24EAE2EF6143ADD0F31 /* Screen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E0738E89ED3EF5769CD046C /* Screen.swift */; };
@@ -40,6 +41,7 @@
 		977C610D438B1509F007B6C2 /* DocumentLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentLoader.swift; sourceTree = "<group>"; };
 		981F9CA71E728539DEF57FA1 /* WeatherUrlHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherUrlHandler.swift; sourceTree = "<group>"; };
 		B15E550DD17BC7AE789BC3BA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		B47D2F058F0DD24E789FC5A8 /* zero_ru.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = zero_ru.json; sourceTree = "<group>"; };
 		B9F36255E18CA451A5CA6EAE /* LoggingDivReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoggingDivReporter.swift; sourceTree = "<group>"; };
 		C4584055A66642A142887E29 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		E556600AD196F82E0BE5C7CA /* WeatherDivKit.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = WeatherDivKit.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -111,6 +113,14 @@
 			path = App;
 			sourceTree = "<group>";
 		};
+		77035F9D79012AE4EA3A0E2C /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				B47D2F058F0DD24E789FC5A8 /* zero_ru.json */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
 		CCF12680C91631E40A4704A0 /* DivKitHost */ = {
 			isa = PBXGroup;
 			children = (
@@ -141,6 +151,7 @@
 				CCF12680C91631E40A4704A0 /* DivKitHost */,
 				1C2F875DAD42FD90B1B1E084 /* Document */,
 				0C5E944F69EAC7714D14E5CD /* Extensions */,
+				77035F9D79012AE4EA3A0E2C /* Resources */,
 			);
 			path = WeatherDivKit;
 			sourceTree = "<group>";
@@ -153,6 +164,7 @@
 			buildConfigurationList = 28F7CA607ACCC026CF57355B /* Build configuration list for PBXNativeTarget "WeatherDivKit" */;
 			buildPhases = (
 				B0FF8D248C141F3BC222C9CF /* Sources */,
+				5433DC0C9FF0C7FD285D1C3C /* Resources */,
 				987F74DF5CAF0F7AD766A75A /* Frameworks */,
 			);
 			buildRules = (
@@ -200,6 +212,17 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		5433DC0C9FF0C7FD285D1C3C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B932FD2CA503BC6643119FCE /* zero_ru.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		B0FF8D248C141F3BC222C9CF /* Sources */ = {
