@@ -35,14 +35,18 @@ final class DocumentLoader: DocumentLoading {
         guard let screens = root["screens"] as? [String: Any] else {
             throw DocumentLoaderError.malformed("missing \"screens\"")
         }
-        guard let mainCard = screens["main"] as? [String: Any] else {
+        guard screens["main"] as? [String: Any] != nil else {
             throw DocumentLoaderError.malformed("missing \"screens.main\"")
         }
 
-        let sourceDict: [String: Any] = ["templates": templates, "card": mainCard]
-        let sourceData = try JSONSerialization.data(withJSONObject: sourceDict)
-        let source = DivViewSource(kind: .data(sourceData), cardId: Screen.main.cardId)
+        var sources: [Screen: DivViewSource] = [:]
+        for screen in Screen.allCases {
+            guard let card = screens[screen.rawValue] as? [String: Any] else { continue }
+            let sourceDict: [String: Any] = ["templates": templates, "card": card]
+            let sourceData = try JSONSerialization.data(withJSONObject: sourceDict)
+            sources[screen] = DivViewSource(kind: .data(sourceData), cardId: screen.cardId)
+        }
 
-        return DocumentBundle(sources: [.main: source], rawBody: data)
+        return DocumentBundle(sources: sources, rawBody: data)
     }
 }
