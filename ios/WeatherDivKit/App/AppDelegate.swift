@@ -33,6 +33,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         let env = ProcessInfo.processInfo.environment
         if let base = env["WDK_BASE_URL"], !base.isEmpty { AppConfig.baseURL = base }
         if env["WDK_UITEST"] == "1" { AppConfig.debugOverlayEnabled = false }
+        if env["WDK_DEBUG_OVERLAY"] == "1" { AppConfig.debugOverlayEnabled = true }
         if env["WDK_RESET_STATE"] == "1" { wipePersistentState() }
     }
 

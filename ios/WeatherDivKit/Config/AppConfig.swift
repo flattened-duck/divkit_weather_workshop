@@ -1,4 +1,5 @@
 enum AppConfig {
     static var baseURL: String = "http://localhost:8080"
-    static var debugOverlayEnabled: Bool = true   // UITests flip off via WDK_UITEST
+    /// Release-like default: error-counter overlay OFF. Force ON with launch env WDK_DEBUG_OVERLAY=1.
+    static var debugOverlayEnabled: Bool = false
 }
