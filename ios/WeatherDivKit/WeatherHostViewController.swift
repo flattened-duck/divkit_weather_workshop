@@ -142,7 +142,7 @@ final class WeatherHostViewController: UIViewController, HostActions {
         }
         currentScreen = screen
         // Default shouldResetPreviousCardData: false — globals in globalStorage persist across swaps.
-        Task { await divView.setSource(source, debugParams: DebugParams(isDebugInfoEnabled: true)) }
+        Task { await divView.setSource(source, debugParams: DebugParams(isDebugInfoEnabled: AppConfig.debugOverlayEnabled)) }
         installPullToRefreshIfMain()
     }
 
