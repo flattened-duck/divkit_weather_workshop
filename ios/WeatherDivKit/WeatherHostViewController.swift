@@ -41,7 +41,9 @@ final class WeatherHostViewController: UIViewController, HostActions {
 
     override func viewWillLayoutSubviews() {
         super.viewWillLayoutSubviews()
-        divView.frame = view.bounds.inset(by: view.safeAreaInsets)
+        // Edge-to-edge: safe-area insets are fed to the layout as status_inset/nav_inset instead
+        // (see viewSafeAreaInsetsDidChange), matching Android's WindowCompat.setDecorFitsSystemWindows(false).
+        divView.frame = view.bounds
     }
 
     override func viewSafeAreaInsetsDidChange() {
@@ -262,6 +264,7 @@ final class WeatherHostViewController: UIViewController, HostActions {
         }
         guard cv.refreshControl == nil else { return }   // don't double-attach to the same CV
         let rc = UIRefreshControl()
+        rc.tintColor = .white // visible against the header photo now that the frame is edge-to-edge
         rc.addTarget(self, action: #selector(handlePullToRefresh(_:)), for: .valueChanged)
         cv.refreshControl = rc
     }

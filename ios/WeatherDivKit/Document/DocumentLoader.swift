@@ -54,6 +54,7 @@ final class DocumentLoader: DocumentLoading {
     // MARK: - Shared reshape
 
     private func makeSources(from root: [String: Any]) throws -> [Screen: DivViewSource] {
+        let root = normalizeForIOSDivKit(root) as? [String: Any] ?? root
         let templates = root["templates"] as? [String: Any] ?? [:]
         guard let screens = root["screens"] as? [String: Any] else {
             throw DocumentLoaderError.malformed("missing \"screens\"")
@@ -70,6 +71,40 @@ final class DocumentLoader: DocumentLoading {
             sources[screen] = DivViewSource(kind: .data(sourceData), cardId: screen.cardId)
         }
         return sources
+    }
+
+    // MARK: - DivKit iOS workarounds
+
+    /// Works around two DivKit iOS gaps vs the backend's Android-first JSON, applied to every
+    /// dict node in the tree before it becomes a `DivViewSource`:
+    /// - gallery `resolveHorizontalInsets`/`resolveVerticalInsets` read only left/right/top/bottom,
+    ///   never start/end (unlike the general resolver) — so gallery start/end padding is dropped.
+    /// - a state-item container with transition_in/out but no id can't be identified across a
+    ///   state change, which DivKit reports as a render error and renders as a janky switch.
+    private func normalizeForIOSDivKit(_ node: Any) -> Any {
+        if var dict = node as? [String: Any] {
+            if dict["type"] as? String == "gallery", var paddings = dict["paddings"] as? [String: Any] {
+                if paddings["left"] == nil, let start = paddings["start"] {
+                    paddings["left"] = start
+                }
+                if paddings["right"] == nil, let end = paddings["end"] {
+                    paddings["right"] = end
+                }
+                dict["paddings"] = paddings
+            }
+            if dict["id"] == nil, dict["transition_in"] != nil || dict["transition_out"] != nil {
+                dict.removeValue(forKey: "transition_in")
+                dict.removeValue(forKey: "transition_out")
+            }
+            for (key, value) in dict {
+                dict[key] = normalizeForIOSDivKit(value)
+            }
+            return dict
+        }
+        if let array = node as? [Any] {
+            return array.map { normalizeForIOSDivKit($0) }
+        }
+        return node
     }
 
     // MARK: - Disk cache
