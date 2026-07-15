@@ -10,6 +10,11 @@ protocol DocumentLoading {
         lon: String?,
         name: String?
     ) async throws -> DocumentBundle
+
+    /// Reads the lang-keyed disk cache (written by a prior successful load). nil if missing/corrupt.
+    func loadCache(lang: String) -> DocumentBundle?
+    /// Reads the app-bundled zero skeleton (dashes + empty:// shimmer). nil if missing/unparseable.
+    func loadBundledSkeleton() -> DocumentBundle?
 }
 
 struct DocumentBundle {
