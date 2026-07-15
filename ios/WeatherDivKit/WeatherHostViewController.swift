@@ -84,14 +84,28 @@ final class WeatherHostViewController: UIViewController, HostActions {
 
     // MARK: - Cold start / refetch
 
+    /// Two-phase: phase 1 renders local (cache-or-skeleton) instantly so the screen is never blank;
+    /// phase 2 fetches network in the background and swaps in on success, else keeps phase 1's layout.
     private func coldStart() async {
         let lang = Persistence.lang
         let (lat, lon, name) = Persistence.city
-        await refetchAndRender(lang: lang, lat: lat, lon: lon, name: name, initial: true)
+
+        if let local = loader.loadCache(lang: lang) ?? loader.loadBundledSkeleton() {
+            sources = local.sources
+            showScreen(.main)
+        }
+
+        do {
+            let fresh = try await loader.load(lang: lang, lat: lat, lon: lon, name: name)
+            sources = fresh.sources
+            renderScreen(currentScreen)
+        } catch {
+            print("WeatherHostViewController: cold start network failed, keeping phase-1 layout: \(error)")
+        }
     }
 
-    /// Single network+render path used by cold start, setLang, setCity.
-    /// Keep-current on failure: does nothing to the screen (no cache/bundle fallback — Stage 3).
+    /// Single network+render path used by setCity (and initial-less refetches).
+    /// Keep-current on failure: does nothing to the screen (no cache/bundle fallback).
     private func refetchAndRender(lang: String, lat: String?, lon: String?, name: String?, initial: Bool) async {
         let bundle: DocumentBundle
         do {
@@ -129,6 +143,7 @@ final class WeatherHostViewController: UIViewController, HostActions {
         currentScreen = screen
         // Default shouldResetPreviousCardData: false — globals in globalStorage persist across swaps.
         Task { await divView.setSource(source, debugParams: DebugParams(isDebugInfoEnabled: true)) }
+        installPullToRefreshIfMain()
     }
 
     private func goBack() {
@@ -152,10 +167,24 @@ final class WeatherHostViewController: UIViewController, HostActions {
         goBack()
     }
 
+    /// Network-only with a same-lang cache fallback on failure (never falls through to the skeleton).
     func setLang(_ lang: String) {
         Persistence.lang = lang
         let (lat, lon, name) = Persistence.city
-        Task { await refetchAndRender(lang: lang, lat: lat, lon: lon, name: name, initial: false) }
+        Task {
+            do {
+                let fresh = try await loader.load(lang: lang, lat: lat, lon: lon, name: name)
+                sources = fresh.sources
+                renderScreen(currentScreen)
+            } catch {
+                if let cached = loader.loadCache(lang: lang) {
+                    sources = cached.sources
+                    renderScreen(currentScreen)
+                } else {
+                    print("WeatherHostViewController: setLang offline, no cache for \(lang), keeping current")
+                }
+            }
+        }
     }
 
     func setTheme(_ theme: String) {
@@ -203,5 +232,53 @@ final class WeatherHostViewController: UIViewController, HostActions {
 
     private func isSystemDark() -> Bool {
         traitCollection.userInterfaceStyle == .dark
+    }
+
+    // MARK: - Pull-to-refresh (main screen only)
+
+    /// BFS: the OUTERMOST UICollectionView in the DivView tree is the main vertical gallery
+    /// (`main_scroll`). Replicated from `ScrollStateExtensionHandler.firstCollectionView` rather than
+    /// shared, to keep the two extensions decoupled.
+    private func firstCollectionView(in root: UIView) -> UICollectionView? {
+        var queue = [root]
+        while !queue.isEmpty {
+            let v = queue.removeFirst()
+            if let cv = v as? UICollectionView { return cv }
+            queue.append(contentsOf: v.subviews)
+        }
+        return nil
+    }
+
+    /// The collection view is (re)built asynchronously after `setSource`, so retry briefly.
+    private func installPullToRefreshIfMain(retriesLeft: Int = 25) {
+        guard currentScreen == .main else { return }
+        guard let cv = firstCollectionView(in: divView) else {
+            if retriesLeft > 0 {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+                    self?.installPullToRefreshIfMain(retriesLeft: retriesLeft - 1)
+                }
+            }
+            return
+        }
+        guard cv.refreshControl == nil else { return }   // don't double-attach to the same CV
+        let rc = UIRefreshControl()
+        rc.addTarget(self, action: #selector(handlePullToRefresh(_:)), for: .valueChanged)
+        cv.refreshControl = rc
+    }
+
+    /// Network-only, keep-current on failure; the spinner ends on every path.
+    @objc private func handlePullToRefresh(_ sender: UIRefreshControl) {
+        let lang = Persistence.lang
+        let (lat, lon, name) = Persistence.city
+        Task {
+            defer { sender.endRefreshing() }
+            do {
+                let fresh = try await loader.load(lang: lang, lat: lat, lon: lon, name: name)
+                sources = fresh.sources
+                renderScreen(currentScreen)
+            } catch {
+                print("WeatherHostViewController: pull-to-refresh offline, keeping current layout: \(error)")
+            }
+        }
     }
 }
