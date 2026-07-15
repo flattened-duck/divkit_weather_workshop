@@ -72,6 +72,13 @@ final class WeatherHostViewController: UIViewController, HostActions {
         factory.urlHandler = WeatherUrlHandler(actions: self)
         factory.customBlockFactory = SunPhaseCustomBlockFactory()
         globals = GlobalVariables(storage: factory.variablesStorage)
+        factory.extensionHandlers.append(
+            ScrollStateExtensionHandler(
+                variablesStorage: factory.variablesStorage,
+                hostView: { [weak self] in self?.divView }
+            )
+        )
+        factory.extensionHandlers.append(ShimmerImagePreviewExtension())
         return factory.makeComponents()
     }
 
