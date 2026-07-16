@@ -1,6 +1,5 @@
 package com.example.weatherdivkit
 
-import android.content.Context
 import android.content.res.Configuration
 import android.os.Bundle
 import android.util.Log
@@ -11,11 +10,16 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
+import com.example.weatherdivkit.config.AppPreferences
+import com.example.weatherdivkit.config.SharedPreferencesStore
 import com.example.weatherdivkit.config.ThemeMode
+import com.example.weatherdivkit.config.ThemeResolver
 import com.example.weatherdivkit.databinding.ActivityMainBinding
 import com.example.weatherdivkit.divkit.ScrollStateExtensionHandler
 import com.example.weatherdivkit.divkit.SunPhaseCustomViewAdapter
 import com.example.weatherdivkit.divkithost.GlobalVarNames
+import com.example.weatherdivkit.divkithost.StatusBarTheming
+import com.example.weatherdivkit.divkithost.WeatherDivActionHandler
 import com.example.weatherdivkit.document.DocumentLoader
 import com.example.weatherdivkit.document.DocumentSource
 import com.example.weatherdivkit.document.Screen
@@ -56,6 +60,7 @@ class MainActivity : AppCompatActivity() {
     private val backStack = mutableListOf<Screen>()
 
     private lateinit var documentSource: DocumentSource
+    private lateinit var prefs: AppPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -69,10 +74,10 @@ class MainActivity : AppCompatActivity() {
         // gallery ("main_scroll") that actually owns the scroll position.
         binding.swipeRefresh.setOnChildScrollUpCallback { _, _ -> mainScrollCanScrollUp() }
 
-        val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val themeMode = prefs.getString(PREF_THEME_MODE, DEFAULT_THEME_MODE) ?: DEFAULT_THEME_MODE
-        val compact = prefs.getBoolean(PREF_COMPACT, false)
-        val effective = resolveEffectiveTheme(themeMode)
+        prefs = AppPreferences(SharedPreferencesStore(this))
+        val themeMode = prefs.themeMode
+        val compact = prefs.compact
+        val effective = ThemeResolver.resolveEffective(themeMode, isSystemDark())
 
         themeModeVar = Variable.StringVariable(GlobalVarNames.THEME_MODE, themeMode)
         themeVar = Variable.StringVariable(GlobalVarNames.THEME, effective)
@@ -105,7 +110,7 @@ class MainActivity : AppCompatActivity() {
             .visualErrorsEnabled(true)
             .build()
 
-        applyStatusBarTheme(effective)
+        StatusBarTheming.apply(window, effective)
 
         // Two-phase cold start: phase 1 renders instantly from local data (cache, else the
         // bundled zero skeleton) so there's never a blank screen; phase 2 swaps in fresh network
@@ -113,8 +118,8 @@ class MainActivity : AppCompatActivity() {
         // doesn't — see onSetLang/onSetCity/onPullToRefresh for the same keep-current contract).
         documentSource = DocumentLoader(this)
 
-        val lang = readLangPref()
-        val (lat, lon, name) = readCity()
+        val lang = prefs.lang
+        val (lat, lon, name) = prefs.readCity()
         lifecycleScope.launch(Dispatchers.IO) {
             val initial = documentSource.loadFromCache(lang) ?: documentSource.loadFromAssets()
             withContext(Dispatchers.Main) {
@@ -138,24 +143,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     // -------------------------------------------------------------------------
-    // Status bar theming — icon contrast follows the effective theme.
-    // -------------------------------------------------------------------------
-
-    private fun applyStatusBarTheme(effectiveTheme: String) {
-        val controller = WindowCompat.getInsetsController(window, window.decorView)
-        val light = effectiveTheme == ThemeMode.LIGHT
-        controller.isAppearanceLightStatusBars = light
-        controller.isAppearanceLightNavigationBars = light
-    }
-
-    // -------------------------------------------------------------------------
     // Language refetch (triggered by weather-app://set_lang?value=ru|en)
     // -------------------------------------------------------------------------
 
     private fun onSetLang(lang: String) {
         Log.i(TAG, "Language changed to '$lang', refetching document…")
-        saveLangPref(lang)
-        val (lat, lon, name) = readCity()
+        prefs.lang = lang
+        val (lat, lon, name) = prefs.readCity()
         lifecycleScope.launch(Dispatchers.IO) {
             // Network-only, never wipes the layout: on failure try the same-language cache
             // (may reflect a stale city, see contract notes); if that also misses, keep
@@ -186,8 +180,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun onPullToRefresh() {
         Log.i(TAG, "Pull-to-refresh: refetching…")
-        val lang = readLangPref()
-        val (lat, lon, name) = readCity()
+        val lang = prefs.lang
+        val (lat, lon, name) = prefs.readCity()
         lifecycleScope.launch(Dispatchers.IO) {
             try {
                 // Network-only, keep-current on failure — never blank the screen mid-refresh.
@@ -215,7 +209,7 @@ class MainActivity : AppCompatActivity() {
 
     /** Off-main fetch of the `/city-search` DivPatch, applied on the main thread to the firing view. */
     private fun onCitySearch(query: String, view: Div2View) {
-        val lang = readLangPref()
+        val lang = prefs.lang
         lifecycleScope.launch(Dispatchers.IO) {
             val patch = documentSource.loadCitySearch(query, lang)
             withContext(Dispatchers.Main) {
@@ -231,8 +225,8 @@ class MainActivity : AppCompatActivity() {
      * PREVIOUS city under a "successful" cache hit. Never falls back to the bundled asset either.
      */
     private fun onSetCity(lat: String, lon: String, name: String) {
-        saveCity(lat, lon, name)
-        val lang = readLangPref()
+        prefs.saveCity(lat, lon, name)
+        val lang = prefs.lang
         lifecycleScope.launch(Dispatchers.IO) {
             val fresh = documentSource.loadFromNetwork(lang, lat, lon, name)
             if (fresh != null) {
@@ -251,21 +245,18 @@ class MainActivity : AppCompatActivity() {
     // -------------------------------------------------------------------------
 
     private fun onSetTheme(mode: String) {
-        getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().putString(PREF_THEME_MODE, mode).apply()
+        prefs.themeMode = mode
         themeModeVar.set(mode)
-        themeVar.set(resolveEffectiveTheme(mode))
-        applyStatusBarTheme(resolveEffectiveTheme(mode))
+        val effective = ThemeResolver.resolveEffective(mode, isSystemDark())
+        themeVar.set(effective)
+        StatusBarTheming.apply(window, effective)
     }
 
     private fun onSetCompact(value: Boolean) {
-        getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().putBoolean(PREF_COMPACT, value).apply()
+        prefs.compact = value
         compactVar.set(value)
         if (value) headerStateVar.set(GlobalVarNames.HeaderState.COLLAPSED)
     }
-
-    /** system → read OS night mode; otherwise the explicit user choice. */
-    private fun resolveEffectiveTheme(mode: String): String =
-        if (mode == ThemeMode.SYSTEM) (if (isSystemDark()) ThemeMode.DARK else ThemeMode.LIGHT) else mode
 
     private fun isSystemDark(): Boolean =
         (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
@@ -277,7 +268,7 @@ class MainActivity : AppCompatActivity() {
             val dark = (newConfig.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
                 Configuration.UI_MODE_NIGHT_YES
             themeVar.set(if (dark) ThemeMode.DARK else ThemeMode.LIGHT)
-            applyStatusBarTheme(if (dark) ThemeMode.DARK else ThemeMode.LIGHT)
+            StatusBarTheming.apply(window, if (dark) ThemeMode.DARK else ThemeMode.LIGHT)
         }
     }
 
@@ -328,53 +319,7 @@ class MainActivity : AppCompatActivity() {
         renderScreen(previous)
     }
 
-    // -------------------------------------------------------------------------
-    // SharedPreferences — language persistence
-    // -------------------------------------------------------------------------
-
-    private fun readLangPref(): String =
-        getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .getString(PREF_LANG, DEFAULT_LANG) ?: DEFAULT_LANG
-
-    private fun saveLangPref(lang: String) {
-        getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .edit()
-            .putString(PREF_LANG, lang)
-            .apply()
-    }
-
-    // -------------------------------------------------------------------------
-    // SharedPreferences — city persistence
-    // -------------------------------------------------------------------------
-
-    private fun readCity(): Triple<String?, String?, String?> {
-        val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        return Triple(
-            prefs.getString(PREF_LAT, null),
-            prefs.getString(PREF_LON, null),
-            prefs.getString(PREF_CITY_NAME, null),
-        )
-    }
-
-    private fun saveCity(lat: String, lon: String, name: String) {
-        getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .edit()
-            .putString(PREF_LAT, lat)
-            .putString(PREF_LON, lon)
-            .putString(PREF_CITY_NAME, name)
-            .apply()
-    }
-
     private companion object {
         const val TAG = "MainActivity"
-        const val PREFS_NAME = "weather_prefs"
-        const val PREF_LANG = "pref_lang"
-        const val DEFAULT_LANG = "ru"
-        const val PREF_THEME_MODE = "pref_theme_mode"
-        const val PREF_COMPACT = "pref_compact"
-        const val DEFAULT_THEME_MODE = ThemeMode.SYSTEM
-        const val PREF_LAT = "pref_lat"
-        const val PREF_LON = "pref_lon"
-        const val PREF_CITY_NAME = "pref_city_name"
     }
 }
