@@ -4,26 +4,35 @@ import UIKit
 
 @MainActor
 final class WeatherHostViewController: UIViewController, HostActions {
-    private let loader: DocumentLoading = DocumentLoader()
+    private let repository = DocumentRepository(loader: DocumentLoader())
+    private let variablesStorage: DivVariablesStorage
+    private let globals: GlobalVariables
     private lazy var divKitComponents: DivKitComponents = makeComponents()
     private lazy var divView = DivView(divKitComponents: divKitComponents)
+    private lazy var router: ScreenRouter = makeRouter()
 
     /// Current parsed screens, replaced atomically on refetch. Analog of Android `screens`.
     private var sources: [Screen: DivViewSource] = [:]
-    private var currentScreen: Screen = .main
-    private var backStack: [Screen] = []
-    /// Set as a side effect the first time `divKitComponents` is accessed (see `makeComponents`).
-    private var globals: GlobalVariables!
     private var themeMode: ThemeMode = .system
     private var effectiveTheme: EffectiveTheme = .light
 
+    init() {
+        let storage = DivVariablesStorage()
+        self.variablesStorage = storage
+        self.globals = GlobalVariables(storage: storage)
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) { fatalError("WeatherHostViewController is instantiated programmatically") }
+
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.addSubview(divView) // forces divKitComponents init -> globals set
 
         themeMode = ThemeMode(rawValue: Persistence.themeMode) ?? .system
         let compact = Persistence.compact
         effectiveTheme = resolveEffectiveTheme(themeMode)
+
+        view.addSubview(divView)
 
         globals.seed([
             GlobalVariables.theme: .string(effectiveTheme.rawValue),
@@ -69,19 +78,38 @@ final class WeatherHostViewController: UIViewController, HostActions {
     }
 
     private func makeComponents() -> DivKitComponents {
-        let factory = DivComponentsFactory()
+        let factory = DivComponentsFactory(variablesStorage: variablesStorage)
         factory.reporter = LoggingDivReporter()
         factory.urlHandler = WeatherUrlHandler(actions: self)
         factory.customBlockFactory = SunPhaseCustomBlockFactory()
-        globals = GlobalVariables(storage: factory.variablesStorage)
         factory.extensionHandlers.append(
             ScrollStateExtensionHandler(
-                variablesStorage: factory.variablesStorage,
+                variablesStorage: variablesStorage,
                 hostView: { [weak self] in self?.divView }
             )
         )
         factory.extensionHandlers.append(ShimmerImagePreviewExtension())
         return factory.makeComponents()
+    }
+
+    private func makeRouter() -> ScreenRouter {
+        ScreenRouter(
+            availableScreens: { [weak self] in self.map { Set($0.sources.keys) } ?? [] },
+            render: { [weak self] screen in
+                guard let self else { return }
+                guard let source = self.sources[screen] else {
+                    Log.error("WeatherHostViewController: No source for \(screen)")
+                    return
+                }
+                // Default shouldResetPreviousCardData: false — globals in globalStorage persist across swaps.
+                Task { await self.divView.setSource(source, debugParams: DebugParams(isDebugInfoEnabled: AppConfig.debugOverlayEnabled)) }
+                self.installPullToRefreshIfMain()
+            },
+            onExit: {
+                // iOS DIVERGENCE: Android calls finish(); iOS has no Activity to finish, so no-op at root.
+                Log.info("WeatherHostViewController: goBack at root — no-op")
+            }
+        )
     }
 
     // MARK: - Cold start / refetch
@@ -92,81 +120,25 @@ final class WeatherHostViewController: UIViewController, HostActions {
         let lang = Persistence.lang
         let (lat, lon, name) = Persistence.city
 
-        if let local = loader.loadCache(lang: lang) ?? loader.loadBundledSkeleton() {
+        if let local = repository.coldStartLocal(lang: lang) {
             sources = local.sources
-            showScreen(.main)
+            router.showScreen(.main)
         }
 
-        do {
-            let fresh = try await loader.load(lang: lang, lat: lat, lon: lon, name: name)
+        if let fresh = await repository.fetch(lang: lang, lat: lat, lon: lon, name: name) {
             sources = fresh.sources
-            renderScreen(currentScreen)
-        } catch {
-            Log.warn("WeatherHostViewController: cold start network failed, keeping phase-1 layout: \(error)")
+            router.renderCurrent()
         }
-    }
-
-    /// Single network+render path used by setCity (and initial-less refetches).
-    /// Keep-current on failure: does nothing to the screen (no cache/bundle fallback).
-    private func refetchAndRender(lang: String, lat: String?, lon: String?, name: String?, initial: Bool) async {
-        let bundle: DocumentBundle
-        do {
-            bundle = try await loader.load(lang: lang, lat: lat, lon: lon, name: name)
-        } catch {
-            Log.warn("WeatherHostViewController: load failed: \(error)")
-            if initial { Log.warn("WeatherHostViewController: cold start failed") }
-            return
-        }
-        sources = bundle.sources
-        if initial {
-            showScreen(.main)
-        } else {
-            renderScreen(currentScreen)
-        }
-    }
-
-    // MARK: - Navigation
-
-    private func showScreen(_ screen: Screen) {
-        let top = backStack.last
-        if let top, top != screen {
-            backStack.append(screen)
-        } else if backStack.isEmpty {
-            backStack.append(screen)
-        }
-        renderScreen(screen)
-    }
-
-    private func renderScreen(_ screen: Screen) {
-        guard let source = sources[screen] else {
-            Log.error("WeatherHostViewController: No source for \(screen)")
-            return
-        }
-        currentScreen = screen
-        // Default shouldResetPreviousCardData: false — globals in globalStorage persist across swaps.
-        Task { await divView.setSource(source, debugParams: DebugParams(isDebugInfoEnabled: AppConfig.debugOverlayEnabled)) }
-        installPullToRefreshIfMain()
-    }
-
-    private func goBack() {
-        if backStack.count <= 1 {
-            // iOS DIVERGENCE: Android calls finish(); iOS has no Activity to finish, so no-op at root.
-            Log.info("WeatherHostViewController: goBack at root — no-op")
-            return
-        }
-        backStack.removeLast()
-        guard let previous = backStack.last else { return }
-        renderScreen(previous)
     }
 
     // MARK: - HostActions
 
     func navigate(to screen: Screen) {
-        showScreen(screen)
+        router.showScreen(screen)
     }
 
     func back() {
-        goBack()
+        router.goBack()
     }
 
     /// Network-only with a same-lang cache fallback on failure (never falls through to the skeleton).
@@ -174,17 +146,11 @@ final class WeatherHostViewController: UIViewController, HostActions {
         Persistence.lang = lang
         let (lat, lon, name) = Persistence.city
         Task {
-            do {
-                let fresh = try await loader.load(lang: lang, lat: lat, lon: lon, name: name)
-                sources = fresh.sources
-                renderScreen(currentScreen)
-            } catch {
-                if let cached = loader.loadCache(lang: lang) {
-                    sources = cached.sources
-                    renderScreen(currentScreen)
-                } else {
-                    Log.warn("WeatherHostViewController: setLang offline, no cache for \(lang), keeping current")
-                }
+            if let bundle = await repository.fetchOrCache(lang: lang, lat: lat, lon: lon, name: name) {
+                sources = bundle.sources
+                router.renderCurrent()
+            } else {
+                Log.warn("WeatherHostViewController: setLang offline, no cache for \(lang), keeping current")
             }
         }
     }
@@ -211,16 +177,21 @@ final class WeatherHostViewController: UIViewController, HostActions {
     func setCity(lat: String, lon: String, name: String) {
         Persistence.city = (lat, lon, name)
         let lang = Persistence.lang
-        Task { await refetchAndRender(lang: lang, lat: lat, lon: lon, name: name, initial: false) }
+        Task {
+            if let bundle = await repository.fetch(lang: lang, lat: lat, lon: lon, name: name) {
+                sources = bundle.sources
+                router.renderCurrent()
+            }
+        }
     }
 
     func citySearch(query: String) {
         let lang = Persistence.lang
         // Capture before the await: pins "apply to the firing screen" (== settings here),
         // so a late navigation away while the fetch is in flight becomes a safe no-op.
-        let cardId = currentScreen.cardId
+        let cardId = router.currentScreen.cardId
         Task {
-            let patch = await loader.loadCitySearch(query: query, lang: lang)
+            let patch = await repository.citySearchPatch(query: query, lang: lang)
             guard let patch else {
                 Log.warn("WeatherHostViewController: citySearch failed for query \"\(query)\"")
                 return
@@ -247,7 +218,7 @@ final class WeatherHostViewController: UIViewController, HostActions {
 
     /// The collection view is (re)built asynchronously after `setSource`, so retry briefly.
     private func installPullToRefreshIfMain(retriesLeft: Int = 25) {
-        guard currentScreen == .main else { return }
+        guard router.currentScreen == .main else { return }
         guard let cv = divView.firstCollectionView() else {
             if retriesLeft > 0 {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
@@ -269,12 +240,11 @@ final class WeatherHostViewController: UIViewController, HostActions {
         let (lat, lon, name) = Persistence.city
         Task {
             defer { sender.endRefreshing() }
-            do {
-                let fresh = try await loader.load(lang: lang, lat: lat, lon: lon, name: name)
+            if let fresh = await repository.fetch(lang: lang, lat: lat, lon: lon, name: name) {
                 sources = fresh.sources
-                renderScreen(currentScreen)
-            } catch {
-                Log.warn("WeatherHostViewController: pull-to-refresh offline, keeping current layout: \(error)")
+                router.renderCurrent()
+            } else {
+                Log.warn("WeatherHostViewController: pull-to-refresh offline, keeping current layout")
             }
         }
     }
