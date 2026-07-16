@@ -28,7 +28,7 @@
 
 | Папка | Что это |
 |---|---|
-| `app/` | Android-клиент. Рендерит DivKit-вёрстку, обрабатывает навигацию и действия. |
+| `android/` | Android-клиент. Рендерит DivKit-вёрстку, обрабатывает навигацию и действия. |
 | `backend/` | Kotlin/Ktor-сервис. Ходит в Open-Meteo, собирает DivKit-вёрстку всех экранов. |
 | `plan/`, `talk/` | Проектные заметки и материалы доклада (не нужны для запуска). |
 
@@ -47,7 +47,7 @@
 ```
   Android (DivKit)  ──►  GET /document?lang=&lat=&lon=&name=  ──►  Ktor backend ──► Open-Meteo
         │             ◄──  { templates, screens: {main, settings, about} }  ◄──
-        └── офлайн-фолбэк: app/src/main/assets/document.json (тот же формат)
+        └── офлайн-фолбэк: android/src/main/assets/document.json (тот же формат)
 ```
 
 ---
@@ -73,16 +73,16 @@ curl 'http://localhost:8080/city-search?q=Berlin&lang=en'   # → DivPatch со 
 ### Приложение
 
 ```bash
-cd app
+cd android
 ./gradlew installDebug          # собрать и поставить на запущенный эмулятор/устройство
-# или открыть папку app/ в Android Studio и запустить
+# или открыть папку android/ в Android Studio и запустить
 ```
 
 - URL сервера по умолчанию — `http://10.0.2.2:8080` (это `localhost` хоста для эмулятора).
   Для физического устройства укажите адрес хоста в `DocumentLoader`.
 - Без запущенного сервера приложение работает на встроенной вёрстке (`assets/document.json`).
 
-> `app/` и `backend/` — **независимые Gradle-проекты**, открывайте их по отдельности.
+> `android/` и `backend/` — **независимые Gradle-проекты**, открывайте их по отдельности.
 > Корневого `settings.gradle.kts` нет.
 
 ---
@@ -92,7 +92,7 @@ cd app
 | Компонент | Версия |
 |---|---|
 | DivKit (Android + сборка вёрстки) | `32.57.0` |
-| Kotlin | `2.2.10` (app), `2.1.20` (backend) |
+| Kotlin | `2.2.10` (android), `2.1.20` (backend) |
 | Ktor | `3.1.3` |
 | Image loader | Coil |
 | Источник погоды | Open-Meteo (без ключа) |
