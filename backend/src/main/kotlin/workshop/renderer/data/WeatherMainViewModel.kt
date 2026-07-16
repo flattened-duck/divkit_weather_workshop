@@ -1,0 +1,51 @@
+package workshop.renderer.data
+
+data class HourCellVm(val time: String, val emoji: String, val tempLabel: String)
+
+data class DayRowVm(
+    val weekday: String,
+    val emoji: String,
+    val minLabel: String,
+    val maxLabel: String,
+    val offsetPx: Int,
+    val fillPx: Int,
+    val precipLabel: String?,
+)
+
+data class WeatherMainViewModel(
+    val popupTitle: String,
+    val popupInstall: String,
+    val bgBaseName: String,
+    val city: String,
+    val currentTempLabel: String,
+    val conditionLabel: String,
+    val todayMaxArrowLabel: String,
+    val todayMinArrowLabel: String,
+    val compactSummaryLabel: String,
+    val hourly: List<HourCellVm>,
+    val daily: List<DayRowVm>,
+    val sunsetTitle: String,
+    val sunrise: String,
+    val sunset: String,
+    val sunsetSubtitle: String,
+    val uvTitle: String,
+    val uvIndexLabel: String,
+    val uvBandLabel: String,
+    val uvFraction: Double,
+    val precipTitle: String,
+    val todayPrecipLabel: String,
+    val precipSubtitle: String,
+    val humidityTitle: String,
+    val humidityLabel: String,
+    val windTitle: String,
+    val windLabel: String,
+    val feelsTitle: String,
+    val feelsLabel: String,
+    val feelsSubtitle: String,
+    val visTitle: String,
+    val visLabel: String,
+    val visSubtitle: String,
+    val pressureTitle: String,
+    val pressureLabel: String,
+    val pressureFraction: Double,
+)

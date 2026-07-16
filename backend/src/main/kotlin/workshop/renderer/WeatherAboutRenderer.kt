@@ -28,18 +28,13 @@ class WeatherAboutRenderer(
     private val localizer: Localizer,
 ) {
 
-    // design-system constants (shared style with WeatherSettingsRenderer)
-    private val screenBgExpr = "@{theme == 'dark' ? '#FF1C1C1E' : '#FFF2F2F7'}"
-    private val surfaceExpr = "@{theme == 'dark' ? '#FF2C2C2E' : '#FFFFFFFF'}"
-    private val primaryTextExpr = "@{theme == 'dark' ? '#FFFFFFFF' : '#FF1C1C1E'}"
-
     /** Card-surface wrapper: theme-aware rounded container with an optional section header. */
     private fun DivScope.card(header: String?, items: List<Div>): Div = container(
         orientation = vertical,
         width = matchParentSize(),
         margins = edgeInsets(bottom = 12),
         paddings = edgeInsets(start = 16, top = 16, end = 16, bottom = 16),
-        background = listOf(solidBackground(color("#FFFFFFFF")).evaluate(color = expression<Color>(surfaceExpr))),
+        background = listOf(solidBackground(color("#FFFFFFFF")).evaluate(color = expression<Color>(Theme.SURFACE))),
         border = border(cornerRadius = 16),
         items = if (header != null) {
             listOf(
@@ -50,7 +45,7 @@ class WeatherAboutRenderer(
                     fontWeight = bold,
                     textColor = color("#FF1C1C1E"),
                     margins = edgeInsets(bottom = 8),
-                ).evaluate(textColor = expression<Color>(primaryTextExpr)),
+                ).evaluate(textColor = expression<Color>(Theme.PRIMARY_TEXT)),
             ) + items
         } else {
             items
@@ -65,7 +60,7 @@ class WeatherAboutRenderer(
                     orientation = vertical,
                     width = matchParentSize(),
                     height = matchParentSize(),
-                    background = listOf(solidBackground(color("#FFF2F2F7")).evaluate(color = expression<Color>(screenBgExpr))),
+                    background = listOf(solidBackground(color("#FFF2F2F7")).evaluate(color = expression<Color>(Theme.SCREEN_BG))),
                     items = listOf(
                         gallery(
                             id = "about_scroll",
@@ -85,7 +80,7 @@ class WeatherAboutRenderer(
                             fontWeight = bold,
                             textColor = color("#FF1C1C1E"),
                             margins = edgeInsets(bottom = 16),
-                        ).evaluate(textColor = expression<Color>(primaryTextExpr)),
+                        ).evaluate(textColor = expression<Color>(Theme.PRIMARY_TEXT)),
 
                         // ── Info card: app name + version ───────────────────────────
                         card(
@@ -98,7 +93,7 @@ class WeatherAboutRenderer(
                                     fontWeight = bold,
                                     textColor = color("#FF1C1C1E"),
                                     margins = edgeInsets(bottom = 4),
-                                ).evaluate(textColor = expression<Color>(primaryTextExpr)),
+                                ).evaluate(textColor = expression<Color>(Theme.PRIMARY_TEXT)),
                                 text(
                                     width = wrapContentSize(),
                                     text = localizer.getOrDefault("about.version", "Version 1.0.0"),
