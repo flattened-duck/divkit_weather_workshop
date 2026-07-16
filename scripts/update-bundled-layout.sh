@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Regenerates the bundled zero-skeleton asset (app/src/main/assets/document.json) from a running
+# Regenerates the bundled zero-skeleton asset (android/src/main/assets/document.json) from a running
 # backend. Usage:
 #   1. Start the backend: (cd backend && ./gradlew run)
 #   2. ./scripts/update-bundled-layout.sh
@@ -11,7 +11,7 @@ BASE_URL="${BASE_URL:-http://localhost:8080}"
 LANG_CODE="${LANG_CODE:-ru}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-OUT="$SCRIPT_DIR/../app/src/main/assets/document.json"
+OUT="$SCRIPT_DIR/../android/src/main/assets/document.json"
 
 TMP="$(mktemp)"
 trap 'rm -f "$TMP"' EXIT
