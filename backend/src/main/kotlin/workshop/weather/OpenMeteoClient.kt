@@ -10,15 +10,19 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.URLBuilder
 import io.ktor.http.Url
 
+interface ForecastClient {
+    suspend fun forecast(lat: Double, lon: Double): JsonNode
+}
+
 /** Thin Ktor-client wrapper over the Open-Meteo forecast/geocoding APIs. */
-class OpenMeteoClient {
+class OpenMeteoClient : ForecastClient {
 
     private val client = HttpClient(CIO) { expectSuccess = true }
     private val mapper: JsonMapper = JsonMapper.builder()
         .addModule(KotlinModule.Builder().build())
         .build()
 
-    suspend fun forecast(lat: Double, lon: Double): JsonNode {
+    override suspend fun forecast(lat: Double, lon: Double): JsonNode {
         val url = URLBuilder(FORECAST_URL).apply {
             parameters.append("latitude", lat.toString())
             parameters.append("longitude", lon.toString())
