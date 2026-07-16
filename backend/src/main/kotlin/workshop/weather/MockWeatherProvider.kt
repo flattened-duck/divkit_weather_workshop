@@ -2,6 +2,7 @@ package workshop.weather
 
 import workshop.l10n.Localizer
 import workshop.proto.WeatherDataOuterClass.ConditionCode
+import workshop.weather.data.CityParam
 import workshop.proto.WeatherDataOuterClass.Current
 import workshop.proto.WeatherDataOuterClass.DailyPoint
 import workshop.proto.WeatherDataOuterClass.DayForecast

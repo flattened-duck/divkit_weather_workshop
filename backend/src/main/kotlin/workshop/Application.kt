@@ -8,9 +8,10 @@ import io.ktor.server.netty.Netty
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
+import workshop.l10n.LanguageSupport
 import workshop.servant.WeatherServant
-import workshop.weather.CityParam
 import workshop.weather.CityRegistry
+import workshop.weather.data.CityParam
 
 fun main() {
     embeddedServer(Netty, port = 8080, module = Application::module).start(wait = true)
@@ -21,8 +22,7 @@ fun Application.module() {
 
     routing {
         get("/document") {
-            val lang = call.request.queryParameters["lang"]
-                ?.takeIf { it in listOf("ru", "en") } ?: "ru"
+            val lang = LanguageSupport.normalize(call.request.queryParameters["lang"])
             val city = cityFromParams(call.request.queryParameters)
             val json = servant.handle(lang, city)
             call.respondText(
@@ -32,13 +32,12 @@ fun Application.module() {
         }
 
         get("/zero") {
-            val lang = call.request.queryParameters["lang"]?.takeIf { it in listOf("ru", "en") } ?: "ru"
+            val lang = LanguageSupport.normalize(call.request.queryParameters["lang"])
             call.respondText(text = servant.zero(lang), contentType = ContentType.Application.Json)
         }
 
         get("/weather-json") {
-            val lang = call.request.queryParameters["lang"]
-                ?.takeIf { it in listOf("ru", "en") } ?: "ru"
+            val lang = LanguageSupport.normalize(call.request.queryParameters["lang"])
             val city = cityFromParams(call.request.queryParameters)
             val json = servant.weatherJson(lang, city)
             call.respondText(
@@ -49,8 +48,7 @@ fun Application.module() {
 
         get("/city-search") {
             val q = call.request.queryParameters["q"] ?: ""
-            val lang = call.request.queryParameters["lang"]
-                ?.takeIf { it in listOf("ru", "en") } ?: "ru"
+            val lang = LanguageSupport.normalize(call.request.queryParameters["lang"])
             val json = servant.citySearch(q, lang)
             call.respondText(
                 text = json,
