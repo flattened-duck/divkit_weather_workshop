@@ -46,7 +46,7 @@ final class ScrollStateExtensionHandler: DivExtensionHandler {
 
     private func attach() {
         guard let root = hostView(),
-              let scrollView = firstCollectionView(in: root) else {
+              let scrollView = root.firstCollectionView() else {
             scheduleRetry()
             return
         }
@@ -77,20 +77,6 @@ final class ScrollStateExtensionHandler: DivExtensionHandler {
         }
     }
 
-    /// BFS: the OUTERMOST UICollectionView in the DivView tree is the main vertical gallery
-    /// (`main_scroll`). Nested horizontal galleries (e.g. hourly forecast) are its descendants and are
-    /// found later, so BFS-first is correct. (Div id is NOT exposed as accessibilityIdentifier —
-    /// verified — so we select by tree position, not id.)
-    private func firstCollectionView(in root: UIView) -> UIScrollView? {
-        var queue = [root]
-        while !queue.isEmpty {
-            let v = queue.removeFirst()
-            if let cv = v as? UICollectionView { return cv }
-            queue.append(contentsOf: v.subviews)
-        }
-        return nil
-    }
-
     // MARK: Hysteresis (ported from Android updateCollapsed)
 
     private func evaluate(_ scrollView: UIScrollView) {
@@ -110,7 +96,7 @@ final class ScrollStateExtensionHandler: DivExtensionHandler {
         }
         guard lastCollapsed != collapsed else { return }
         lastCollapsed = collapsed
-        writeHeaderState(collapsed ? "collapsed" : "full")
+        writeHeaderState(collapsed ? .collapsed : .full)
     }
 
     private func currentCompact() -> Bool {
@@ -120,12 +106,12 @@ final class ScrollStateExtensionHandler: DivExtensionHandler {
         return false
     }
 
-    private func writeHeaderState(_ value: String) {
+    private func writeHeaderState(_ state: HeaderState) {
         // Change-only vs the ACTUAL stored value (robust to Stage-1 setCompact also writing it).
         if case let .string(current) = variablesStorage.getVariableValue(cardId: cardId, name: GlobalVariables.headerState),
-           current == value {
+           current == state.rawValue {
             return
         }
-        variablesStorage.append(variables: [GlobalVariables.headerState: .string(value)], triggerUpdate: true)
+        variablesStorage.append(variables: [GlobalVariables.headerState: .string(state.rawValue)], triggerUpdate: true)
     }
 }

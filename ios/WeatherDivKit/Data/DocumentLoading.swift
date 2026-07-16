@@ -15,11 +15,6 @@ protocol DocumentLoading {
     func loadCache(lang: String) -> DocumentBundle?
     /// Reads the app-bundled zero skeleton (dashes + empty:// shimmer). nil if missing/unparseable.
     func loadBundledSkeleton() -> DocumentBundle?
-}
-
-struct DocumentBundle {
-    /// Renderable source per screen. Stage 0: only `.main` present.
-    let sources: [Screen: DivViewSource]
-    /// Raw successful response body (for the Stage 3 cache-to-disk seam). Unused in Stage 0.
-    let rawBody: Data
+    /// Fetches a city-search DivPatch to apply to the currently rendered card. nil on any failure.
+    func loadCitySearch(query: String, lang: String) async -> DivPatch?
 }

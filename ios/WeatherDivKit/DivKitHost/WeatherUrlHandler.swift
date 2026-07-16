@@ -50,7 +50,7 @@ final class WeatherUrlHandler: DivUrlHandler {
             return true
 
         case "set_theme":
-            guard let mode = params["mode"], ["system", "dark", "light"].contains(mode) else { return false }
+            guard let mode = params["mode"], ThemeMode(rawValue: mode) != nil else { return false }
             actions?.setTheme(mode)
             return true
 

@@ -35,6 +35,20 @@
                ReferencedContainer = "container:WeatherDivKit.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "B37558D14E7680BA694A2C0E"
+               BuildableName = "WeatherDivKitUnitTests.xctest"
+               BlueprintName = "WeatherDivKitUnitTests"
+               ReferencedContainer = "container:WeatherDivKit.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
@@ -61,6 +75,17 @@
                BlueprintIdentifier = "4679C7B16310119F78410C1B"
                BuildableName = "WeatherDivKitUITests.xctest"
                BlueprintName = "WeatherDivKitUITests"
+               ReferencedContainer = "container:WeatherDivKit.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "B37558D14E7680BA694A2C0E"
+               BuildableName = "WeatherDivKitUnitTests.xctest"
+               BlueprintName = "WeatherDivKitUnitTests"
                ReferencedContainer = "container:WeatherDivKit.xcodeproj">
             </BuildableReference>
          </TestableReference>

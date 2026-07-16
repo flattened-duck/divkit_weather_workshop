@@ -19,7 +19,7 @@ enum Persistence {
     }
 
     static var themeMode: String {
-        get { defaults.string(forKey: Key.themeMode) ?? "system" }
+        get { defaults.string(forKey: Key.themeMode) ?? ThemeMode.system.rawValue }
         set { defaults.set(newValue, forKey: Key.themeMode) }
     }
 
