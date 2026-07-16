@@ -1,8 +1,9 @@
 package workshop.weather
 
-data class CityParam(val lat: Double, val lon: Double, val name: String?)
-data class CityEntry(val nameRu: String, val nameEn: String, val lat: Double, val lon: Double)
-data class CityHit(val name: String, val lat: Double, val lon: Double)
+import workshop.l10n.LanguageSupport
+import workshop.weather.data.CityEntry
+import workshop.weather.data.CityHit
+import workshop.weather.data.CityParam
 
 object CityRegistry {
 
@@ -19,7 +20,8 @@ object CityRegistry {
         CityEntry("Токио", "Tokyo", 35.6762, 139.6503),
     )
 
-    fun displayName(e: CityEntry, lang: String): String = if (lang == "en") e.nameEn else e.nameRu
+    fun displayName(e: CityEntry, lang: String): String =
+        if (LanguageSupport.isEnglish(lang)) e.nameEn else e.nameRu
 
     fun search(query: String, lang: String): List<CityHit> {
         if (query.isEmpty()) return emptyList()

@@ -8,6 +8,7 @@ import kotlin.test.assertTrue
 import kotlinx.coroutines.runBlocking
 import workshop.l10n.Localizer
 import workshop.proto.WeatherDataOuterClass.ConditionCode
+import workshop.weather.data.CityParam
 
 private class FakeForecastClient(private val node: JsonNode) : ForecastClient {
     override suspend fun forecast(lat: Double, lon: Double): JsonNode = node

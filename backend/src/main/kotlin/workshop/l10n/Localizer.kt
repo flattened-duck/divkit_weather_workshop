@@ -8,7 +8,7 @@ class Localizer(lang: String) {
     private val strings: Map<String, String>
 
     init {
-        val effectiveLang = if (lang in SUPPORTED_LANGS) lang else DEFAULT_LANG
+        val effectiveLang = LanguageSupport.normalize(lang)
         val resourcePath = "/strings/strings_$effectiveLang.json"
         val stream = Localizer::class.java.getResourceAsStream(resourcePath)
             ?: throw IllegalStateException("String resource not found: $resourcePath")
@@ -17,9 +17,4 @@ class Localizer(lang: String) {
 
     fun getOrDefault(key: String, default: String): String =
         strings.getOrDefault(key, default)
-
-    companion object {
-        private const val DEFAULT_LANG = "ru"
-        private val SUPPORTED_LANGS = setOf("ru", "en")
-    }
 }

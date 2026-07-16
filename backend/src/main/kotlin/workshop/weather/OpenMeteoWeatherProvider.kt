@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import java.time.LocalDateTime
 import org.slf4j.LoggerFactory
 import workshop.l10n.Localizer
+import workshop.weather.data.CityParam
 import workshop.proto.WeatherDataOuterClass.Current
 import workshop.proto.WeatherDataOuterClass.DailyPoint
 import workshop.proto.WeatherDataOuterClass.DayForecast

@@ -26,9 +26,9 @@ import workshop.renderer.WeatherAboutRenderer
 import workshop.renderer.WeatherMainRenderer
 import workshop.renderer.WeatherSettingsRenderer
 import workshop.renderer.WeatherZeroRenderer
-import workshop.weather.CityParam
 import workshop.weather.Geocoder
 import workshop.weather.WeatherProvider
+import workshop.weather.data.CityParam
 
 /**
  * WeatherServant orchestrates the three screen renderers and assembles the single JSON envelope.
