@@ -17,20 +17,20 @@ import com.example.weatherdivkit.config.ThemeResolver
 import com.example.weatherdivkit.databinding.ActivityMainBinding
 import com.example.weatherdivkit.divkit.ScrollStateExtensionHandler
 import com.example.weatherdivkit.divkit.SunPhaseCustomViewAdapter
-import com.example.weatherdivkit.divkithost.GlobalVarNames
+import com.example.weatherdivkit.divkithost.GlobalVariables
 import com.example.weatherdivkit.divkithost.StatusBarTheming
 import com.example.weatherdivkit.divkithost.WeatherDivActionHandler
 import com.example.weatherdivkit.document.DocumentLoader
+import com.example.weatherdivkit.document.DocumentRepository
 import com.example.weatherdivkit.document.DocumentSource
 import com.example.weatherdivkit.document.Screen
+import com.example.weatherdivkit.navigation.ScreenNavigator
 import com.example.weatherdivkit.net.HttpClients
 import com.yandex.div.DivDataTag
 import com.yandex.div.coil.CoilDivImageLoader
 import com.yandex.div.core.Div2Context
 import com.yandex.div.core.DivConfiguration
-import com.yandex.div.core.expression.variables.DivVariableController
 import com.yandex.div.core.view2.Div2View
-import com.yandex.div.data.Variable
 import com.yandex.div.shimmer.DivShimmerExtensionHandler
 import com.yandex.div2.DivData
 import kotlinx.coroutines.Dispatchers
@@ -42,24 +42,14 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var divConfiguration: DivConfiguration
-    private lateinit var variableController: DivVariableController
-    private lateinit var themeModeVar: Variable.StringVariable
-    private lateinit var themeVar: Variable.StringVariable
-    private lateinit var compactVar: Variable.BooleanVariable
-    private lateinit var headerStateVar: Variable.StringVariable
-    private lateinit var statusInsetVar: Variable.IntegerVariable
-    private lateinit var navInsetVar: Variable.IntegerVariable
+    private lateinit var globals: GlobalVariables
+    private lateinit var navigator: ScreenNavigator
 
     /** Currently rendered screens map. Replaced atomically on refetch. */
     private var screens: Map<Screen, DivData> = emptyMap()
 
-    /** The screen currently on top (survives language refetch). */
-    private var currentScreen: Screen = Screen.MAIN
-
-    /** Back stack: each entry is a screen we can go back to. */
-    private val backStack = mutableListOf<Screen>()
-
     private lateinit var documentSource: DocumentSource
+    private lateinit var repository: DocumentRepository
     private lateinit var prefs: AppPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -79,33 +69,25 @@ class MainActivity : AppCompatActivity() {
         val compact = prefs.compact
         val effective = ThemeResolver.resolveEffective(themeMode, isSystemDark())
 
-        themeModeVar = Variable.StringVariable(GlobalVarNames.THEME_MODE, themeMode)
-        themeVar = Variable.StringVariable(GlobalVarNames.THEME, effective)
-        compactVar = Variable.BooleanVariable(GlobalVarNames.COMPACT, compact)
-        headerStateVar = Variable.StringVariable(GlobalVarNames.HEADER_STATE, GlobalVarNames.HeaderState.FULL)
-        statusInsetVar = Variable.IntegerVariable(GlobalVarNames.STATUS_INSET, 0L)
-        navInsetVar = Variable.IntegerVariable(GlobalVarNames.NAV_INSET, 0L)
-        variableController = DivVariableController()
-        variableController.declare(
-            themeModeVar, themeVar, compactVar, headerStateVar, statusInsetVar, navInsetVar,
-        )
+        globals = GlobalVariables(themeMode = themeMode, effectiveTheme = effective, compact = compact)
 
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             val d = resources.displayMetrics.density
-            statusInsetVar.set((bars.top / d).roundToInt().toLong())
-            navInsetVar.set((bars.bottom / d).roundToInt().toLong())
+            globals.setInsets((bars.top / d).roundToInt().toLong(), (bars.bottom / d).roundToInt().toLong())
             insets
         }
         ViewCompat.requestApplyInsets(binding.root)
 
+        navigator = ScreenNavigator(availableScreens = { screens.keys }, render = ::renderDiv, onExit = ::finish)
+
         divConfiguration = DivConfiguration.Builder(CoilDivImageLoader(this, HttpClients.noProxy))
             .actionHandler(WeatherDivActionHandler(
-                ::showScreen, ::goBack, ::onSetLang, ::onSetTheme, ::onSetCompact,
+                navigator::showScreen, navigator::goBack, ::onSetLang, ::onSetTheme, ::onSetCompact,
                 ::onCitySearch, ::onSetCity))
-            .divVariableController(variableController)
+            .divVariableController(globals.controller)
             .divCustomContainerViewAdapter(SunPhaseCustomViewAdapter())
-            .extension(ScrollStateExtensionHandler(variableController))
+            .extension(ScrollStateExtensionHandler(globals.controller))
             .extension(DivShimmerExtensionHandler())
             .visualErrorsEnabled(true)
             .build()
@@ -117,28 +99,29 @@ class MainActivity : AppCompatActivity() {
         // data in the background once it arrives (or leaves phase 1's layout on screen if it
         // doesn't — see onSetLang/onSetCity/onPullToRefresh for the same keep-current contract).
         documentSource = DocumentLoader(this)
+        repository = DocumentRepository(documentSource)
 
         val lang = prefs.lang
         val (lat, lon, name) = prefs.readCity()
         lifecycleScope.launch(Dispatchers.IO) {
-            val initial = documentSource.loadFromCache(lang) ?: documentSource.loadFromAssets()
+            val initial = repository.coldStartLocal(lang)
             withContext(Dispatchers.Main) {
                 screens = initial
-                showScreen(Screen.MAIN)
+                navigator.showScreen(Screen.MAIN)
             }
 
-            val fresh = documentSource.loadFromNetwork(lang, lat, lon, name)
+            val fresh = repository.fetch(lang, lat, lon, name)
             if (fresh != null) {
                 withContext(Dispatchers.Main) {
                     screens = fresh
-                    renderScreen(currentScreen)
+                    navigator.renderCurrent()
                 }
             }
         }
 
         // Modern back handling — works with predictive back (targetSdk 33+/36).
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() = goBack()
+            override fun handleOnBackPressed() = navigator.goBack()
         })
     }
 
@@ -154,12 +137,11 @@ class MainActivity : AppCompatActivity() {
             // Network-only, never wipes the layout: on failure try the same-language cache
             // (may reflect a stale city, see contract notes); if that also misses, keep
             // whatever is currently on screen rather than falling back to the zero asset.
-            val fresh = documentSource.loadFromNetwork(lang, lat, lon, name)
-            val rawScreens = fresh ?: documentSource.loadFromCache(lang)
+            val rawScreens = repository.fetchOrCache(lang, lat, lon, name)
             withContext(Dispatchers.Main) {
                 if (rawScreens != null) {
                     screens = rawScreens
-                    renderScreen(currentScreen)
+                    navigator.renderCurrent()
                 } else {
                     Log.i(TAG, "Offline and no cache for lang=$lang, keeping current layout")
                 }
@@ -168,7 +150,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     // -------------------------------------------------------------------------
-    // Pull-to-refresh (main screen only — see renderScreen's isEnabled toggle)
+    // Pull-to-refresh (main screen only — see renderDiv's isEnabled toggle)
     // -------------------------------------------------------------------------
 
     /**
@@ -185,11 +167,11 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
                 // Network-only, keep-current on failure — never blank the screen mid-refresh.
-                val fresh = documentSource.loadFromNetwork(lang, lat, lon, name)
+                val fresh = repository.fetch(lang, lat, lon, name)
                 if (fresh != null) {
                     withContext(Dispatchers.Main) {
                         screens = fresh
-                        renderScreen(currentScreen)
+                        navigator.renderCurrent()
                     }
                 } else {
                     Log.i(TAG, "Pull-to-refresh offline, keeping current layout")
@@ -211,7 +193,7 @@ class MainActivity : AppCompatActivity() {
     private fun onCitySearch(query: String, view: Div2View) {
         val lang = prefs.lang
         lifecycleScope.launch(Dispatchers.IO) {
-            val patch = documentSource.loadCitySearch(query, lang)
+            val patch = repository.citySearchPatch(query, lang)
             withContext(Dispatchers.Main) {
                 if (patch != null) view.applyPatch(patch)
                 else Log.w(TAG, "city_search patch null (q='$query')")
@@ -228,11 +210,11 @@ class MainActivity : AppCompatActivity() {
         prefs.saveCity(lat, lon, name)
         val lang = prefs.lang
         lifecycleScope.launch(Dispatchers.IO) {
-            val fresh = documentSource.loadFromNetwork(lang, lat, lon, name)
+            val fresh = repository.fetch(lang, lat, lon, name)
             if (fresh != null) {
                 withContext(Dispatchers.Main) {
                     screens = fresh
-                    renderScreen(currentScreen)
+                    navigator.renderCurrent()
                 }
             } else {
                 Log.i(TAG, "Offline, keeping current layout (city change not applied)")
@@ -246,16 +228,15 @@ class MainActivity : AppCompatActivity() {
 
     private fun onSetTheme(mode: String) {
         prefs.themeMode = mode
-        themeModeVar.set(mode)
+        globals.setThemeMode(mode)
         val effective = ThemeResolver.resolveEffective(mode, isSystemDark())
-        themeVar.set(effective)
+        globals.setTheme(effective)
         StatusBarTheming.apply(window, effective)
     }
 
     private fun onSetCompact(value: Boolean) {
         prefs.compact = value
-        compactVar.set(value)
-        if (value) headerStateVar.set(GlobalVarNames.HeaderState.COLLAPSED)
+        globals.setCompact(value)
     }
 
     private fun isSystemDark(): Boolean =
@@ -264,10 +245,10 @@ class MainActivity : AppCompatActivity() {
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        if ((themeModeVar.getValue() as String) == ThemeMode.SYSTEM) {
+        if (globals.currentThemeMode() == ThemeMode.SYSTEM) {
             val dark = (newConfig.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
                 Configuration.UI_MODE_NIGHT_YES
-            themeVar.set(if (dark) ThemeMode.DARK else ThemeMode.LIGHT)
+            globals.setTheme(if (dark) ThemeMode.DARK else ThemeMode.LIGHT)
             StatusBarTheming.apply(window, if (dark) ThemeMode.DARK else ThemeMode.LIGHT)
         }
     }
@@ -276,23 +257,12 @@ class MainActivity : AppCompatActivity() {
     // Navigation
     // -------------------------------------------------------------------------
 
-    private fun showScreen(screen: Screen) {
-        val current = backStack.lastOrNull()
-        if (current != null && current != screen) {
-            backStack.add(screen)
-        } else if (backStack.isEmpty()) {
-            backStack.add(screen)
-        }
-        renderScreen(screen)
-    }
-
-    private fun renderScreen(screen: Screen) {
+    private fun renderDiv(screen: Screen) {
         val data = screens[screen] ?: run {
             Log.e(TAG, "No DivData for screen: $screen")
             return
         }
 
-        currentScreen = screen
         binding.swipeRefresh.isEnabled = (screen == Screen.MAIN)
 
         val divContext = Div2Context(
@@ -307,16 +277,6 @@ class MainActivity : AppCompatActivity() {
 
         binding.divContainer.removeAllViews()
         binding.divContainer.addView(divView)
-    }
-
-    private fun goBack() {
-        if (backStack.size <= 1) {
-            finish()
-            return
-        }
-        backStack.removeAt(backStack.lastIndex)
-        val previous = backStack.lastOrNull() ?: run { finish(); return }
-        renderScreen(previous)
     }
 
     private companion object {
