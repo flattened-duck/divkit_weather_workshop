@@ -1,4 +1,4 @@
-package com.example.weatherdivkit
+package com.example.weatherdivkit.divkithost
 
 import android.net.Uri
 import android.os.Handler
