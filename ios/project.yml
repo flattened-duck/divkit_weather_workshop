@@ -11,7 +11,6 @@ targets:
   WeatherDivKit:
     type: application
     platform: iOS
-    deploymentTarget: "15.0"
     sources:
       - path: WeatherDivKit
     dependencies:
@@ -38,7 +37,6 @@ targets:
   WeatherDivKitUITests:
     type: bundle.ui-testing
     platform: iOS
-    deploymentTarget: "15.0"
     sources:
       - path: WeatherDivKitUITests
     dependencies:
@@ -49,13 +47,28 @@ targets:
         SWIFT_VERSION: "5.9"
         TARGETED_DEVICE_FAMILY: "1"
         PRODUCT_BUNDLE_IDENTIFIER: com.example.weatherdivkit.uitests
+  WeatherDivKitUnitTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: WeatherDivKitUnitTests
+    dependencies:
+      - target: WeatherDivKit
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_VERSION: "5.9"
+        TARGETED_DEVICE_FAMILY: "1"
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.weatherdivkit.unittests
 schemes:
   WeatherDivKit:
     build:
       targets:
         WeatherDivKit: all
         WeatherDivKitUITests: [test]
+        WeatherDivKitUnitTests: [test]
     test:
       targets:
         - WeatherDivKitUITests
+        - WeatherDivKitUnitTests
       gatherCoverageData: false

@@ -14,22 +14,22 @@ final class WeatherHostViewController: UIViewController, HostActions {
     private var backStack: [Screen] = []
     /// Set as a side effect the first time `divKitComponents` is accessed (see `makeComponents`).
     private var globals: GlobalVariables!
-    private var themeMode = "system"
-    private var effectiveTheme = "light"
+    private var themeMode: ThemeMode = .system
+    private var effectiveTheme: EffectiveTheme = .light
 
     override func viewDidLoad() {
         super.viewDidLoad()
         view.addSubview(divView) // forces divKitComponents init -> globals set
 
-        themeMode = Persistence.themeMode
+        themeMode = ThemeMode(rawValue: Persistence.themeMode) ?? .system
         let compact = Persistence.compact
         effectiveTheme = resolveEffectiveTheme(themeMode)
 
         globals.seed([
-            GlobalVariables.theme: .string(effectiveTheme),
-            GlobalVariables.themeMode: .string(themeMode),
+            GlobalVariables.theme: .string(effectiveTheme.rawValue),
+            GlobalVariables.themeMode: .string(themeMode.rawValue),
             GlobalVariables.compact: .bool(compact),
-            GlobalVariables.headerState: .string("full"),
+            GlobalVariables.headerState: .string(HeaderState.full.rawValue),
             GlobalVariables.statusInset: .integer(0),
             GlobalVariables.navInset: .integer(0),
         ])
@@ -55,16 +55,16 @@ final class WeatherHostViewController: UIViewController, HostActions {
     }
 
     override var preferredStatusBarStyle: UIStatusBarStyle {
-        effectiveTheme == "dark" ? .lightContent : .darkContent
+        effectiveTheme == .dark ? .lightContent : .darkContent
     }
 
     override func traitCollectionDidChange(_ previous: UITraitCollection?) {
         super.traitCollectionDidChange(previous)
         guard traitCollection.userInterfaceStyle != previous?.userInterfaceStyle else { return }
-        guard themeMode == "system" else { return }
-        let eff = isSystemDark() ? "dark" : "light"
+        guard themeMode == .system else { return }
+        let eff: EffectiveTheme = isSystemDark() ? .dark : .light
         effectiveTheme = eff
-        globals.set([GlobalVariables.theme: .string(eff)])
+        globals.set([GlobalVariables.theme: .string(eff.rawValue)])
         setNeedsStatusBarAppearanceUpdate()
     }
 
@@ -102,7 +102,7 @@ final class WeatherHostViewController: UIViewController, HostActions {
             sources = fresh.sources
             renderScreen(currentScreen)
         } catch {
-            print("WeatherHostViewController: cold start network failed, keeping phase-1 layout: \(error)")
+            Log.warn("WeatherHostViewController: cold start network failed, keeping phase-1 layout: \(error)")
         }
     }
 
@@ -113,8 +113,8 @@ final class WeatherHostViewController: UIViewController, HostActions {
         do {
             bundle = try await loader.load(lang: lang, lat: lat, lon: lon, name: name)
         } catch {
-            print("WeatherHostViewController: load failed: \(error)")
-            if initial { print("WeatherHostViewController: cold start failed") }
+            Log.warn("WeatherHostViewController: load failed: \(error)")
+            if initial { Log.warn("WeatherHostViewController: cold start failed") }
             return
         }
         sources = bundle.sources
@@ -139,7 +139,7 @@ final class WeatherHostViewController: UIViewController, HostActions {
 
     private func renderScreen(_ screen: Screen) {
         guard let source = sources[screen] else {
-            print("WeatherHostViewController: No source for \(screen)")
+            Log.error("WeatherHostViewController: No source for \(screen)")
             return
         }
         currentScreen = screen
@@ -151,7 +151,7 @@ final class WeatherHostViewController: UIViewController, HostActions {
     private func goBack() {
         if backStack.count <= 1 {
             // iOS DIVERGENCE: Android calls finish(); iOS has no Activity to finish, so no-op at root.
-            print("WeatherHostViewController: goBack at root — no-op")
+            Log.info("WeatherHostViewController: goBack at root — no-op")
             return
         }
         backStack.removeLast()
@@ -183,7 +183,7 @@ final class WeatherHostViewController: UIViewController, HostActions {
                     sources = cached.sources
                     renderScreen(currentScreen)
                 } else {
-                    print("WeatherHostViewController: setLang offline, no cache for \(lang), keeping current")
+                    Log.warn("WeatherHostViewController: setLang offline, no cache for \(lang), keeping current")
                 }
             }
         }
@@ -191,9 +191,12 @@ final class WeatherHostViewController: UIViewController, HostActions {
 
     func setTheme(_ theme: String) {
         Persistence.themeMode = theme
-        themeMode = theme
-        effectiveTheme = resolveEffectiveTheme(theme)
-        globals.set([GlobalVariables.themeMode: .string(theme), GlobalVariables.theme: .string(effectiveTheme)])
+        themeMode = ThemeMode(rawValue: theme) ?? .system
+        effectiveTheme = resolveEffectiveTheme(themeMode)
+        globals.set([
+            GlobalVariables.themeMode: .string(themeMode.rawValue),
+            GlobalVariables.theme: .string(effectiveTheme.rawValue),
+        ])
         setNeedsStatusBarAppearanceUpdate()
     }
 
@@ -201,7 +204,7 @@ final class WeatherHostViewController: UIViewController, HostActions {
         Persistence.compact = compact
         globals.set([GlobalVariables.compact: .bool(compact)])
         if compact {
-            globals.set([GlobalVariables.headerState: .string("collapsed")])
+            globals.set([GlobalVariables.headerState: .string(HeaderState.collapsed.rawValue)])
         }
     }
 
@@ -217,9 +220,9 @@ final class WeatherHostViewController: UIViewController, HostActions {
         // so a late navigation away while the fetch is in flight becomes a safe no-op.
         let cardId = currentScreen.cardId
         Task {
-            let patch = await DocumentLoader().loadCitySearch(query: query, lang: lang)
+            let patch = await loader.loadCitySearch(query: query, lang: lang)
             guard let patch else {
-                print("WeatherHostViewController: citySearch failed for query \"\(query)\"")
+                Log.warn("WeatherHostViewController: citySearch failed for query \"\(query)\"")
                 return
             }
             divView.applyPatch(patch, cardId: cardId)
@@ -228,8 +231,12 @@ final class WeatherHostViewController: UIViewController, HostActions {
 
     // MARK: - Theme resolution
 
-    private func resolveEffectiveTheme(_ mode: String) -> String {
-        mode == "system" ? (isSystemDark() ? "dark" : "light") : mode
+    private func resolveEffectiveTheme(_ mode: ThemeMode) -> EffectiveTheme {
+        switch mode {
+        case .system: return isSystemDark() ? .dark : .light
+        case .dark: return .dark
+        case .light: return .light
+        }
     }
 
     private func isSystemDark() -> Bool {
@@ -238,23 +245,10 @@ final class WeatherHostViewController: UIViewController, HostActions {
 
     // MARK: - Pull-to-refresh (main screen only)
 
-    /// BFS: the OUTERMOST UICollectionView in the DivView tree is the main vertical gallery
-    /// (`main_scroll`). Replicated from `ScrollStateExtensionHandler.firstCollectionView` rather than
-    /// shared, to keep the two extensions decoupled.
-    private func firstCollectionView(in root: UIView) -> UICollectionView? {
-        var queue = [root]
-        while !queue.isEmpty {
-            let v = queue.removeFirst()
-            if let cv = v as? UICollectionView { return cv }
-            queue.append(contentsOf: v.subviews)
-        }
-        return nil
-    }
-
     /// The collection view is (re)built asynchronously after `setSource`, so retry briefly.
     private func installPullToRefreshIfMain(retriesLeft: Int = 25) {
         guard currentScreen == .main else { return }
-        guard let cv = firstCollectionView(in: divView) else {
+        guard let cv = divView.firstCollectionView() else {
             if retriesLeft > 0 {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
                     self?.installPullToRefreshIfMain(retriesLeft: retriesLeft - 1)
@@ -280,7 +274,7 @@ final class WeatherHostViewController: UIViewController, HostActions {
                 sources = fresh.sources
                 renderScreen(currentScreen)
             } catch {
-                print("WeatherHostViewController: pull-to-refresh offline, keeping current layout: \(error)")
+                Log.warn("WeatherHostViewController: pull-to-refresh offline, keeping current layout: \(error)")
             }
         }
     }

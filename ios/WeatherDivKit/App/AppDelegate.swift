@@ -43,11 +43,11 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         }
         let fm = FileManager.default
         if let sup = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
-            try? fm.removeItem(at: sup.appendingPathComponent("divkit.values_storage"))  // stored values (popup)
+            try? fm.removeItem(at: sup.appendingPathComponent(AppPaths.storedValuesFileName))  // stored values (popup)
         }
         if let caches = fm.urls(for: .cachesDirectory, in: .userDomainMask).first,
            let files = try? fm.contentsOfDirectory(at: caches, includingPropertiesForKeys: nil) {
-            for f in files where f.lastPathComponent.hasPrefix("doc_cache_") { try? fm.removeItem(at: f) }
+            for f in files where f.lastPathComponent.hasPrefix(AppPaths.cacheFilePrefix) { try? fm.removeItem(at: f) }
         }
     }
 }
