@@ -1,18 +1,17 @@
-package com.example.weatherdivkit.divkit
+package com.example.weatherdivkit.document
 
 import android.content.Context
 import android.net.Uri
 import android.util.Log
+import com.example.weatherdivkit.net.HttpClients
 import com.yandex.div.data.DivParsingEnvironment
 import com.yandex.div.json.ParsingErrorLogger
 import com.yandex.div2.DivData
 import com.yandex.div2.DivPatch
-import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
 import java.io.File
 import java.io.IOException
-import java.net.Proxy
 
 /**
  * Loads the DivKit document envelope (templates + screens map).
@@ -30,21 +29,13 @@ import java.net.Proxy
  * Templates are parsed ONCE into a shared DivParsingEnvironment.
  * Each screen's DivData reuses that same environment.
  */
-class DocumentLoader(private val context: Context) {
-
-    private val httpClient by lazy(LazyThreadSafetyMode.PUBLICATION) {
-        // The Android emulator's DHCP configures an HTTP proxy at 10.0.2.2:8888.
-        // We bypass it with Proxy.NO_PROXY so the app connects directly to the backend.
-        OkHttpClient.Builder()
-            .proxy(Proxy.NO_PROXY)
-            .build()
-    }
+class DocumentLoader(private val context: Context) : DocumentSource {
 
     /**
      * Reads assets/document.json, parses templates once,
      * and returns a map of screen id → DivData.
      */
-    fun loadFromAssets(): Map<String, DivData> {
+    override fun loadFromAssets(): Map<Screen, DivData> {
         val raw = context.assets.open("document.json")
             .bufferedReader()
             .use { it.readText() }
@@ -57,12 +48,12 @@ class DocumentLoader(private val context: Context) {
      * a map of screen id → DivData.
      * Returns null on network failure or parse error (use [loadFromAssets] as fallback).
      */
-    fun loadFromNetwork(
+    override fun loadFromNetwork(
         lang: String,
-        lat: String? = null,
-        lon: String? = null,
-        name: String? = null,
-    ): Map<String, DivData>? {
+        lat: String?,
+        lon: String?,
+        name: String?,
+    ): Map<Screen, DivData>? {
         val uriBuilder = Uri.parse("$baseUrl/document").buildUpon()
             .appendQueryParameter("lang", lang)
         if (!lat.isNullOrBlank()) uriBuilder.appendQueryParameter("lat", lat)
@@ -74,7 +65,7 @@ class DocumentLoader(private val context: Context) {
             .build()
 
         return try {
-            val response = httpClient.newCall(request).execute()
+            val response = HttpClients.noProxy.newCall(request).execute()
             val body = response.body?.string() ?: run {
                 Log.w(TAG, "Empty response body from network")
                 return null
@@ -97,7 +88,7 @@ class DocumentLoader(private val context: Context) {
      * it the same way as the network/asset paths. Returns null if the file is missing or corrupt
      * — a corrupt cache must degrade to the bundled zero asset, never crash.
      */
-    fun loadFromCache(lang: String): Map<String, DivData>? {
+    override fun loadFromCache(lang: String): Map<Screen, DivData>? {
         val file = cacheFile(lang)
         if (!file.exists()) return null
         return try {
@@ -130,14 +121,14 @@ class DocumentLoader(private val context: Context) {
      * (envelope shape `{"changes":[…]}`, optionally with a `templates` object).
      * Must be called off the main thread; returns null on network/parse failure.
      */
-    fun loadCitySearch(query: String, lang: String): DivPatch? {
+    override fun loadCitySearch(query: String, lang: String): DivPatch? {
         val url = Uri.parse("$baseUrl/city-search").buildUpon()
             .appendQueryParameter("q", query)
             .appendQueryParameter("lang", lang)
             .build().toString()
         val request = Request.Builder().url(url).build()
         return try {
-            val body = httpClient.newCall(request).execute().body?.string() ?: return null
+            val body = HttpClients.noProxy.newCall(request).execute().body?.string() ?: return null
             val json = JSONObject(body)
             val env = DivParsingEnvironment(ParsingErrorLogger.ASSERT)
             json.optJSONObject("templates")?.let { env.parseTemplates(it) }
@@ -148,7 +139,7 @@ class DocumentLoader(private val context: Context) {
         }
     }
 
-    private fun parseEnvelope(json: JSONObject): Map<String, DivData> {
+    private fun parseEnvelope(json: JSONObject): Map<Screen, DivData> {
         val templatesJson = json.optJSONObject("templates")
         val screensJson = json.getJSONObject("screens")
 
@@ -161,7 +152,7 @@ class DocumentLoader(private val context: Context) {
             val keys = screensJson.keys()
             while (keys.hasNext()) {
                 val key = keys.next()
-                put(key, DivData(env, screensJson.getJSONObject(key)))
+                Screen.fromWireId(key)?.let { put(it, DivData(env, screensJson.getJSONObject(key))) }
             }
         }
     }

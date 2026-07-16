@@ -2,6 +2,7 @@ package com.example.weatherdivkit.divkit
 
 import android.view.View
 import androidx.recyclerview.widget.RecyclerView
+import com.example.weatherdivkit.divkithost.GlobalVarNames
 import com.yandex.div.core.expression.variables.DivVariableController
 import com.yandex.div.core.extension.DivExtensionHandler
 import com.yandex.div.core.view2.Div2View
@@ -53,7 +54,7 @@ class ScrollStateExtensionHandler(
             } else {
                 !rv.canScrollVertically(-1)
             }
-            val forced = (variableController.get(COMPACT_VAR) as? Variable.BooleanVariable)
+            val forced = (variableController.get(GlobalVarNames.COMPACT) as? Variable.BooleanVariable)
                 ?.getValue() as? Boolean ?: false
             // Hysteresis without an offset-based expand threshold: collapse when scrolled past
             // collapsePx (offset is clean while the header is still expanded); once collapsed, stay
@@ -67,8 +68,8 @@ class ScrollStateExtensionHandler(
             }
             if (lastCollapsed[rv] != collapsed) {
                 lastCollapsed[rv] = collapsed
-                (variableController.get(HEADER_STATE_VAR) as? Variable.StringVariable)
-                    ?.set(if (collapsed) "collapsed" else "full")
+                (variableController.get(GlobalVarNames.HEADER_STATE) as? Variable.StringVariable)
+                    ?.set(if (collapsed) GlobalVarNames.HeaderState.COLLAPSED else GlobalVarNames.HeaderState.FULL)
             }
         }
 
@@ -104,8 +105,6 @@ class ScrollStateExtensionHandler(
 
     companion object {
         const val EXTENSION_ID = "scroll_state"
-        const val HEADER_STATE_VAR = "header_state"
-        const val COMPACT_VAR = "compact"
         // Collapse when scrolled past COLLAPSE_DP; expand only when back at the very top
         // (canScrollVertically(-1)==false), which is immune to the reactive top-padding shift.
         private const val COLLAPSE_DP = 24

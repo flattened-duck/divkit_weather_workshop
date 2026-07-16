@@ -3,7 +3,7 @@ package com.example.weatherdivkit
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import com.example.weatherdivkit.divkit.DocumentLoader
+import com.example.weatherdivkit.document.DocumentLoader
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
