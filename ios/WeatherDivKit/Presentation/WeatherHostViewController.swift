@@ -128,6 +128,8 @@ final class WeatherHostViewController: UIViewController, HostActions {
         if let fresh = await repository.fetch(lang: lang, lat: lat, lon: lon, name: name) {
             sources = fresh.sources
             router.renderCurrent()
+        } else {
+            Log.warn("WeatherHostViewController: cold start network failed, keeping phase-1 layout")
         }
     }
 
@@ -181,6 +183,8 @@ final class WeatherHostViewController: UIViewController, HostActions {
             if let bundle = await repository.fetch(lang: lang, lat: lat, lon: lon, name: name) {
                 sources = bundle.sources
                 router.renderCurrent()
+            } else {
+                Log.warn("WeatherHostViewController: setCity network failed, keeping current")
             }
         }
     }
