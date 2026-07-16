@@ -4,7 +4,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.example.weatherdivkit.divkit.DocumentLoader
+import com.example.weatherdivkit.document.DocumentLoader
 import com.example.weatherdivkit.divkit.ScrollStateExtensionHandler
 import com.example.weatherdivkit.divkit.SunPhaseCustomViewAdapter
 import com.example.weatherdivkit.divkit.SunPhaseView

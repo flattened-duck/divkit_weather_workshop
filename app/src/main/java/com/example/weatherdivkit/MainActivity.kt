@@ -11,10 +11,15 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
+import com.example.weatherdivkit.config.ThemeMode
 import com.example.weatherdivkit.databinding.ActivityMainBinding
-import com.example.weatherdivkit.divkit.DocumentLoader
 import com.example.weatherdivkit.divkit.ScrollStateExtensionHandler
 import com.example.weatherdivkit.divkit.SunPhaseCustomViewAdapter
+import com.example.weatherdivkit.divkithost.GlobalVarNames
+import com.example.weatherdivkit.document.DocumentLoader
+import com.example.weatherdivkit.document.DocumentSource
+import com.example.weatherdivkit.document.Screen
+import com.example.weatherdivkit.net.HttpClients
 import com.yandex.div.DivDataTag
 import com.yandex.div.coil.CoilDivImageLoader
 import com.yandex.div.core.Div2Context
@@ -27,8 +32,6 @@ import com.yandex.div2.DivData
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import okhttp3.OkHttpClient
-import java.net.Proxy
 import kotlin.math.roundToInt
 
 class MainActivity : AppCompatActivity() {
@@ -52,15 +55,7 @@ class MainActivity : AppCompatActivity() {
     /** Back stack: each entry is a screen we can go back to. */
     private val backStack = mutableListOf<Screen>()
 
-    // The Android emulator's DHCP configures an HTTP proxy (Wi-Fi AP config, 10.0.2.2:8888).
-    // Coil's network fetcher builds its own OkHttpClient by default and picks that proxy up,
-    // breaking image loads from raw.githubusercontent.com. Bypass it the same way
-    // DocumentLoader already does for the backend.
-    private val imageHttpClient by lazy(LazyThreadSafetyMode.PUBLICATION) {
-        OkHttpClient.Builder()
-            .proxy(Proxy.NO_PROXY)
-            .build()
-    }
+    private lateinit var documentSource: DocumentSource
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -79,12 +74,12 @@ class MainActivity : AppCompatActivity() {
         val compact = prefs.getBoolean(PREF_COMPACT, false)
         val effective = resolveEffectiveTheme(themeMode)
 
-        themeModeVar = Variable.StringVariable("theme_mode", themeMode)
-        themeVar = Variable.StringVariable("theme", effective)
-        compactVar = Variable.BooleanVariable("compact", compact)
-        headerStateVar = Variable.StringVariable("header_state", "full")
-        statusInsetVar = Variable.IntegerVariable("status_inset", 0L)
-        navInsetVar = Variable.IntegerVariable("nav_inset", 0L)
+        themeModeVar = Variable.StringVariable(GlobalVarNames.THEME_MODE, themeMode)
+        themeVar = Variable.StringVariable(GlobalVarNames.THEME, effective)
+        compactVar = Variable.BooleanVariable(GlobalVarNames.COMPACT, compact)
+        headerStateVar = Variable.StringVariable(GlobalVarNames.HEADER_STATE, GlobalVarNames.HeaderState.FULL)
+        statusInsetVar = Variable.IntegerVariable(GlobalVarNames.STATUS_INSET, 0L)
+        navInsetVar = Variable.IntegerVariable(GlobalVarNames.NAV_INSET, 0L)
         variableController = DivVariableController()
         variableController.declare(
             themeModeVar, themeVar, compactVar, headerStateVar, statusInsetVar, navInsetVar,
@@ -99,7 +94,7 @@ class MainActivity : AppCompatActivity() {
         }
         ViewCompat.requestApplyInsets(binding.root)
 
-        divConfiguration = DivConfiguration.Builder(CoilDivImageLoader(this, imageHttpClient))
+        divConfiguration = DivConfiguration.Builder(CoilDivImageLoader(this, HttpClients.noProxy))
             .actionHandler(WeatherDivActionHandler(
                 ::showScreen, ::goBack, ::onSetLang, ::onSetTheme, ::onSetCompact,
                 ::onCitySearch, ::onSetCity))
@@ -116,20 +111,21 @@ class MainActivity : AppCompatActivity() {
         // bundled zero skeleton) so there's never a blank screen; phase 2 swaps in fresh network
         // data in the background once it arrives (or leaves phase 1's layout on screen if it
         // doesn't — see onSetLang/onSetCity/onPullToRefresh for the same keep-current contract).
+        documentSource = DocumentLoader(this)
+
         val lang = readLangPref()
         val (lat, lon, name) = readCity()
         lifecycleScope.launch(Dispatchers.IO) {
-            val loader = DocumentLoader(this@MainActivity)
-            val initial = loader.loadFromCache(lang) ?: loader.loadFromAssets()
+            val initial = documentSource.loadFromCache(lang) ?: documentSource.loadFromAssets()
             withContext(Dispatchers.Main) {
-                screens = buildScreensMap(initial)
+                screens = initial
                 showScreen(Screen.MAIN)
             }
 
-            val fresh = loader.loadFromNetwork(lang, lat, lon, name)
+            val fresh = documentSource.loadFromNetwork(lang, lat, lon, name)
             if (fresh != null) {
                 withContext(Dispatchers.Main) {
-                    screens = buildScreensMap(fresh)
+                    screens = fresh
                     renderScreen(currentScreen)
                 }
             }
@@ -147,7 +143,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun applyStatusBarTheme(effectiveTheme: String) {
         val controller = WindowCompat.getInsetsController(window, window.decorView)
-        val light = effectiveTheme == "light"
+        val light = effectiveTheme == ThemeMode.LIGHT
         controller.isAppearanceLightStatusBars = light
         controller.isAppearanceLightNavigationBars = light
     }
@@ -164,12 +160,11 @@ class MainActivity : AppCompatActivity() {
             // Network-only, never wipes the layout: on failure try the same-language cache
             // (may reflect a stale city, see contract notes); if that also misses, keep
             // whatever is currently on screen rather than falling back to the zero asset.
-            val loader = DocumentLoader(this@MainActivity)
-            val fresh = loader.loadFromNetwork(lang, lat, lon, name)
-            val rawScreens = fresh ?: loader.loadFromCache(lang)
+            val fresh = documentSource.loadFromNetwork(lang, lat, lon, name)
+            val rawScreens = fresh ?: documentSource.loadFromCache(lang)
             withContext(Dispatchers.Main) {
                 if (rawScreens != null) {
-                    screens = buildScreensMap(rawScreens)
+                    screens = rawScreens
                     renderScreen(currentScreen)
                 } else {
                     Log.i(TAG, "Offline and no cache for lang=$lang, keeping current layout")
@@ -196,10 +191,10 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
                 // Network-only, keep-current on failure — never blank the screen mid-refresh.
-                val fresh = DocumentLoader(this@MainActivity).loadFromNetwork(lang, lat, lon, name)
+                val fresh = documentSource.loadFromNetwork(lang, lat, lon, name)
                 if (fresh != null) {
                     withContext(Dispatchers.Main) {
-                        screens = buildScreensMap(fresh)
+                        screens = fresh
                         renderScreen(currentScreen)
                     }
                 } else {
@@ -222,7 +217,7 @@ class MainActivity : AppCompatActivity() {
     private fun onCitySearch(query: String, view: Div2View) {
         val lang = readLangPref()
         lifecycleScope.launch(Dispatchers.IO) {
-            val patch = DocumentLoader(this@MainActivity).loadCitySearch(query, lang)
+            val patch = documentSource.loadCitySearch(query, lang)
             withContext(Dispatchers.Main) {
                 if (patch != null) view.applyPatch(patch)
                 else Log.w(TAG, "city_search patch null (q='$query')")
@@ -239,10 +234,10 @@ class MainActivity : AppCompatActivity() {
         saveCity(lat, lon, name)
         val lang = readLangPref()
         lifecycleScope.launch(Dispatchers.IO) {
-            val fresh = DocumentLoader(this@MainActivity).loadFromNetwork(lang, lat, lon, name)
+            val fresh = documentSource.loadFromNetwork(lang, lat, lon, name)
             if (fresh != null) {
                 withContext(Dispatchers.Main) {
-                    screens = buildScreensMap(fresh)
+                    screens = fresh
                     renderScreen(currentScreen)
                 }
             } else {
@@ -265,12 +260,12 @@ class MainActivity : AppCompatActivity() {
     private fun onSetCompact(value: Boolean) {
         getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().putBoolean(PREF_COMPACT, value).apply()
         compactVar.set(value)
-        if (value) headerStateVar.set("collapsed")
+        if (value) headerStateVar.set(GlobalVarNames.HeaderState.COLLAPSED)
     }
 
     /** system → read OS night mode; otherwise the explicit user choice. */
     private fun resolveEffectiveTheme(mode: String): String =
-        if (mode == "system") (if (isSystemDark()) "dark" else "light") else mode
+        if (mode == ThemeMode.SYSTEM) (if (isSystemDark()) ThemeMode.DARK else ThemeMode.LIGHT) else mode
 
     private fun isSystemDark(): Boolean =
         (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
@@ -278,24 +273,13 @@ class MainActivity : AppCompatActivity() {
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        if ((themeModeVar.getValue() as String) == "system") {
+        if ((themeModeVar.getValue() as String) == ThemeMode.SYSTEM) {
             val dark = (newConfig.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
                 Configuration.UI_MODE_NIGHT_YES
-            themeVar.set(if (dark) "dark" else "light")
-            applyStatusBarTheme(if (dark) "dark" else "light")
+            themeVar.set(if (dark) ThemeMode.DARK else ThemeMode.LIGHT)
+            applyStatusBarTheme(if (dark) ThemeMode.DARK else ThemeMode.LIGHT)
         }
     }
-
-    // -------------------------------------------------------------------------
-    // Document loading helpers
-    // -------------------------------------------------------------------------
-
-    private fun buildScreensMap(rawScreens: Map<String, DivData>): Map<Screen, DivData> =
-        buildMap {
-            rawScreens["main"]?.let { put(Screen.MAIN, it) }
-            rawScreens["settings"]?.let { put(Screen.SETTINGS, it) }
-            rawScreens["about"]?.let { put(Screen.ABOUT, it) }
-        }
 
     // -------------------------------------------------------------------------
     // Navigation
@@ -327,7 +311,7 @@ class MainActivity : AppCompatActivity() {
         )
 
         val divView = Div2View(divContext).apply {
-            setData(data, DivDataTag(screen.name.lowercase()))
+            setData(data, DivDataTag(screen.wireId))
         }
 
         binding.divContainer.removeAllViews()
@@ -388,7 +372,7 @@ class MainActivity : AppCompatActivity() {
         const val DEFAULT_LANG = "ru"
         const val PREF_THEME_MODE = "pref_theme_mode"
         const val PREF_COMPACT = "pref_compact"
-        const val DEFAULT_THEME_MODE = "system"
+        const val DEFAULT_THEME_MODE = ThemeMode.SYSTEM
         const val PREF_LAT = "pref_lat"
         const val PREF_LON = "pref_lon"
         const val PREF_CITY_NAME = "pref_city_name"

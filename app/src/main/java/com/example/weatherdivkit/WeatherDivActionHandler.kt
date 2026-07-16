@@ -3,6 +3,8 @@ package com.example.weatherdivkit
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
+import com.example.weatherdivkit.config.ThemeMode
+import com.example.weatherdivkit.document.Screen
 import com.yandex.div.core.DivActionHandler
 import com.yandex.div.core.DivViewFacade
 import com.yandex.div.core.view2.Div2View
@@ -41,9 +43,7 @@ class WeatherDivActionHandler(
             "navigate" -> {
                 val screenParam = url.getQueryParameter("screen")
                     ?: return false
-                val screen = runCatching {
-                    Screen.valueOf(screenParam.uppercase())
-                }.getOrNull() ?: return false
+                val screen = Screen.fromWireId(screenParam.lowercase()) ?: return false
 
                 mainHandler.post { onNavigate(screen) }
                 true
@@ -59,7 +59,7 @@ class WeatherDivActionHandler(
             }
             "set_theme" -> {
                 val mode = url.getQueryParameter("mode")
-                if (mode == null || mode !in setOf("system", "dark", "light")) return false
+                if (mode == null || mode !in setOf(ThemeMode.SYSTEM, ThemeMode.DARK, ThemeMode.LIGHT)) return false
                 mainHandler.post { onSetTheme(mode) }
                 true
             }

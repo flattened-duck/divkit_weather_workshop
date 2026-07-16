@@ -6,7 +6,7 @@ import android.graphics.Color
 import android.os.SystemClock
 import android.view.View
 import androidx.test.core.app.ActivityScenario
-import com.example.weatherdivkit.divkit.DocumentLoader
+import com.example.weatherdivkit.document.DocumentLoader
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.mockwebserver.Dispatcher
