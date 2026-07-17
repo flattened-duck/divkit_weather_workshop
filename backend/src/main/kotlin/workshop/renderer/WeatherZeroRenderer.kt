@@ -25,11 +25,13 @@ import divkit.dsl.horizontal
 import divkit.dsl.image
 import divkit.dsl.matchParentSize
 import divkit.dsl.overlap
+import divkit.dsl.render
 import divkit.dsl.right
 import divkit.dsl.scope.DivScope
 import divkit.dsl.solidBackground
 import divkit.dsl.state
 import divkit.dsl.stateItem
+import divkit.dsl.template
 import divkit.dsl.text
 import divkit.dsl.top
 import divkit.dsl.url
@@ -57,6 +59,19 @@ class WeatherZeroRenderer(
     private fun loc(key: String, fallback: String): String = localizer.getOrDefault(key, fallback)
 
     private fun buildCard(scope: DivScope) = with(scope) {
+        val hourCellSkeletonTemplate = template("hour_cell_skeleton") {
+            shimmerBar(width = fixedSize(64), height = fixedSize(90))
+        }
+
+        val dailyRowSkeletonTemplate = template("daily_row_skeleton") {
+            container(
+                orientation = horizontal,
+                width = matchParentSize(),
+                paddings = edgeInsets(top = 10, bottom = 10, start = 8, end = 8),
+                items = listOf(shimmerBar(width = matchParentSize(), height = fixedSize(20))),
+            )
+        }
+
         val background = container(
             width = matchParentSize(),
             height = matchParentSize(),
@@ -150,7 +165,7 @@ class WeatherZeroRenderer(
             height = wrapContentSize(),
             paddings = edgeInsets(start = 16, end = 16),
             itemSpacing = 12,
-            items = List(8) { shimmerBar(width = fixedSize(64), height = fixedSize(90)) },
+            items = List(8) { render(hourCellSkeletonTemplate) },
         )
 
         val weeklyBlock = container(
@@ -160,14 +175,7 @@ class WeatherZeroRenderer(
             background = listOf(solidBackground().evaluate(color = expression<Color>(Theme.CARD_BG))),
             border = border(cornerRadius = 16),
             paddings = edgeInsets(start = 8, top = 8, end = 8, bottom = 8),
-            items = List(7) {
-                container(
-                    orientation = horizontal,
-                    width = matchParentSize(),
-                    paddings = edgeInsets(top = 10, bottom = 10, start = 8, end = 8),
-                    items = listOf(shimmerBar(width = matchParentSize(), height = fixedSize(20))),
-                )
-            },
+            items = List(7) { render(dailyRowSkeletonTemplate) },
         )
 
         val sunsetCard = detailSkeletonCard(
