@@ -6,6 +6,9 @@ __pycache__/
 # Presentation / talk materials — kept local only, not pushed to remote
 talk/
 
+# Planning / contract docs — kept local only, not pushed to remote
+plan/
+
 # macOS
 .DS_Store
 
