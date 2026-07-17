@@ -7,8 +7,12 @@ final class DivComponentsFactory {
     var customBlockFactory: DivCustomBlockFactory?         // S2A sun_phase sets this
     var patchProvider: DivPatchProvider?                   // S3A city-search may set this
     var urlHandler: DivUrlHandler?                          // S1 sets the real WeatherUrlHandler
-    let variablesStorage = DivVariablesStorage()           // S1 seeds global vars here
+    let variablesStorage: DivVariablesStorage               // S1 seeds global vars here
     var reporter: DivReporter?                             // Stage 0 sets LoggingDivReporter
+
+    init(variablesStorage: DivVariablesStorage = DivVariablesStorage()) {
+        self.variablesStorage = variablesStorage
+    }
 
     func makeComponents() -> DivKitComponents {
         DivKitComponents(

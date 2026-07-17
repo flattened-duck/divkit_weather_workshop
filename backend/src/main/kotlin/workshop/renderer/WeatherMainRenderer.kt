@@ -49,16 +49,12 @@ import divkit.dsl.url
 import divkit.dsl.vertical
 import divkit.dsl.wrapContentSize
 import kotlin.math.roundToInt
-import workshop.l10n.Localizer
-import workshop.proto.WeatherDataOuterClass.ConditionCode
-import workshop.proto.WeatherDataOuterClass.DailyPoint
-import workshop.proto.WeatherDataOuterClass.HourlyPoint
-import workshop.proto.WeatherDataOuterClass.WeatherData
-import workshop.weather.bgBase
+import workshop.renderer.data.DayRowVm
+import workshop.renderer.data.HourCellVm
+import workshop.renderer.data.WeatherMainViewModel
 
 class WeatherMainRenderer(
-    private val weatherData: WeatherData,
-    private val localizer: Localizer,
+    private val vm: WeatherMainViewModel,
 ) {
 
     fun render(): Pair<String, Divan> {
@@ -68,26 +64,7 @@ class WeatherMainRenderer(
         return "main" to card
     }
 
-    private fun loc(key: String, fallback: String): String = localizer.getOrDefault(key, fallback)
-
-    private fun uvBand(uv: Int): String = when {
-        uv <= 2 -> loc("weather.uv.low", "Low")
-        uv <= 5 -> loc("weather.uv.moderate", "Moderate")
-        uv <= 7 -> loc("weather.uv.high", "High")
-        uv <= 10 -> loc("weather.uv.very_high", "Very high")
-        else -> loc("weather.uv.extreme", "Extreme")
-    }
-
     private fun buildCard(scope: DivScope) = with(scope) {
-        val current = weatherData.current
-        val daily = weatherData.dailyList
-        val hourly = weatherData.hourlyList
-        val daily0 = daily[0]
-
-        val weekMin = daily.minOf { it.tempMin }
-        val weekMax = daily.maxOf { it.tempMax }
-        val span = maxOf(1, weekMax - weekMin)
-
         // Stored Values demo: show ⟺ not dismissed this session AND widget not installed
         // AND not currently within the delayed re-show TTL window.
         // getTimestamp/nowLocal don't exist as builtins in open DivKit 32.6.0 (confirmed via
@@ -152,7 +129,7 @@ class WeatherMainRenderer(
             margins = edgeInsets(top = 12, bottom = 12),
         )
         val title = text(
-            text = localizer.getOrDefault("popup.widget.title", "Add the weather widget to your home screen"),
+            text = vm.popupTitle,
             width = matchParentSize(),
             fontSize = 18,
             fontWeight = bold,
@@ -160,7 +137,7 @@ class WeatherMainRenderer(
         )
         val installBtn = text(
             id = "popup_install",
-            text = localizer.getOrDefault("popup.widget.install", "Install"),
+            text = vm.popupInstall,
             width = matchParentSize(),
             fontSize = 16,
             fontWeight = bold,
@@ -201,9 +178,8 @@ class WeatherMainRenderer(
         // ---- Layer 0: full-screen weather background, theme-driven day/night photo swap ----
         // Selects the _day vs _night photo of the SAME condition base; no real time-of-day
         // dependency. Light theme -> day photo, dark theme -> night photo.
-        val bgBaseName = bgBase(current.condition)
-        val bgDayUrl = "$BG_IMAGE_BASE_URL${bgBaseName}_day.png"
-        val bgNightUrl = "$BG_IMAGE_BASE_URL${bgBaseName}_night.png"
+        val bgDayUrl = "$BG_IMAGE_BASE_URL${vm.bgBaseName}_day.png"
+        val bgNightUrl = "$BG_IMAGE_BASE_URL${vm.bgBaseName}_night.png"
         val bgUrlExpr = "@{theme == 'dark' ? '$bgNightUrl' : '$bgDayUrl'}"
         val backgroundImage = image(
             width = matchParentSize(),
@@ -221,39 +197,39 @@ class WeatherMainRenderer(
             transitionOut = fadeTransition(duration = 250),
             items = listOf(
                 text(
-                    text = current.city,
+                    text = vm.city,
                     width = wrapContentSize(),
                     fontSize = 20,
                     fontWeight = bold,
-                ).evaluate(textColor = expression<Color>(TITLE_COLOR_EXPR)),
+                ).evaluate(textColor = expression<Color>(Theme.PRIMARY_TEXT)),
                 text(
-                    text = "${current.tempC}°",
+                    text = vm.currentTempLabel,
                     width = wrapContentSize(),
                     fontSize = 72,
                     fontWeight = bold,
                     margins = edgeInsets(top = 4),
-                ).evaluate(textColor = expression<Color>(TITLE_COLOR_EXPR)),
+                ).evaluate(textColor = expression<Color>(Theme.PRIMARY_TEXT)),
                 text(
-                    text = loc("condition.${current.condition.name}", current.condition.name),
+                    text = vm.conditionLabel,
                     width = wrapContentSize(),
                     fontSize = 18,
-                ).evaluate(textColor = expression<Color>(SUB_COLOR_EXPR)),
+                ).evaluate(textColor = expression<Color>(Theme.SECONDARY_TEXT)),
                 container(
                     orientation = horizontal,
                     width = wrapContentSize(),
                     margins = edgeInsets(top = 6),
                     items = listOf(
                         text(
-                            text = "↑ ${daily0.tempMax}°",
+                            text = vm.todayMaxArrowLabel,
                             width = wrapContentSize(),
                             fontSize = 16,
-                        ).evaluate(textColor = expression<Color>(TITLE_COLOR_EXPR)),
+                        ).evaluate(textColor = expression<Color>(Theme.PRIMARY_TEXT)),
                         text(
-                            text = "  ↓ ${daily0.tempMin}°",
+                            text = vm.todayMinArrowLabel,
                             width = wrapContentSize(),
                             fontSize = 16,
                             margins = edgeInsets(start = 12),
-                        ).evaluate(textColor = expression<Color>(SUB_COLOR_EXPR)),
+                        ).evaluate(textColor = expression<Color>(Theme.SECONDARY_TEXT)),
                     ),
                 ),
             ),
@@ -264,22 +240,22 @@ class WeatherMainRenderer(
             width = matchParentSize(),
             paddings = edgeInsets(start = 20, end = 20, bottom = 8)
                 .evaluate(top = expression<Int>("@{12 + status_inset}")),
-            background = listOf(solidBackground().evaluate(color = expression<Color>(HEADER_SCRIM_EXPR))),
+            background = listOf(solidBackground().evaluate(color = expression<Color>(Theme.HEADER_SCRIM))),
             transitionIn = fadeTransition(duration = 250),
             transitionOut = fadeTransition(duration = 250),
             items = listOf(
                 text(
-                    text = current.city,
+                    text = vm.city,
                     width = wrapContentSize(),
                     fontSize = 17,
                     fontWeight = bold,
-                ).evaluate(textColor = expression<Color>(TITLE_COLOR_EXPR)),
+                ).evaluate(textColor = expression<Color>(Theme.PRIMARY_TEXT)),
                 text(
-                    text = "${current.tempC}°  |  " + loc("condition.${current.condition.name}", current.condition.name),
+                    text = vm.compactSummaryLabel,
                     width = wrapContentSize(),
                     fontSize = 15,
                     margins = edgeInsets(top = 2),
-                ).evaluate(textColor = expression<Color>(SUB_COLOR_EXPR)),
+                ).evaluate(textColor = expression<Color>(Theme.SECONDARY_TEXT)),
             ),
         )
 
@@ -320,40 +296,25 @@ class WeatherMainRenderer(
             height = wrapContentSize(),
             paddings = edgeInsets(start = 16, end = 16),
             itemSpacing = 12,
-            items = hourly.map { hourCell(it) },
+            items = vm.hourly.map { hourCell(it) },
         )
 
         val weeklyBlock = container(
             orientation = vertical,
             width = matchParentSize(),
             margins = edgeInsets(start = 16, top = 16, end = 16),
-            background = listOf(solidBackground().evaluate(color = expression<Color>(CARD_BG_EXPR))),
+            background = listOf(solidBackground().evaluate(color = expression<Color>(Theme.CARD_BG))),
             border = border(cornerRadius = 16),
             paddings = edgeInsets(start = 8, top = 8, end = 8, bottom = 8),
-            items = daily.map { dailyRow(it, weekMin, span) },
+            items = vm.daily.map { dailyRow(it) },
         )
-
-        val uvFrac = current.uvIndex.coerceIn(0, 11) / 11.0
-        val pressFrac = ((current.pressure - PRESS_MIN).toDouble() / (PRESS_MAX - PRESS_MIN))
-
-        val feelsDelta = current.feelsC - current.tempC
-        val feelsSubtitle = when {
-            kotlin.math.abs(feelsDelta) <= 1 -> loc("feels.similar", "Similar to the actual temperature")
-            feelsDelta > 1 -> loc("feels.warmer", "Feels warmer than it actually is")
-            else -> loc("feels.cooler", "Feels cooler than it actually is")
-        }
-        val visSubtitle = when {
-            current.visibility >= 20000 -> loc("vis.perfect", "Perfectly clear")
-            current.visibility >= 10000 -> loc("vis.good", "Good visibility")
-            else -> loc("vis.reduced", "Reduced visibility")
-        }
 
         val sunsetArc = custom(
             id = "sun_phase",
             customType = "sun_phase",
             customProps = mapOf(
-                "sunrise" to current.sunrise,
-                "sunset" to current.sunset,
+                "sunrise" to vm.sunrise,
+                "sunset" to vm.sunset,
                 "track_color" to "#FF9E9EA3",
             ),
             width = matchParentSize(),
@@ -361,10 +322,10 @@ class WeatherMainRenderer(
         )
         val sunsetCard = detailCard(
             icon = "",
-            title = loc("weather.sunset", "Sunset"),
-            bigValue = current.sunset,
+            title = vm.sunsetTitle,
+            bigValue = vm.sunset,
             body = sunsetArc,
-            subtitle = loc("card.sunrise_at", "Sunrise at") + " " + current.sunrise,
+            subtitle = vm.sunsetSubtitle,
             margins = edgeInsets(start = 16, top = 16, end = 16),
         )
 
@@ -378,26 +339,26 @@ class WeatherMainRenderer(
             items = listOf(
                 detailCard(
                     icon = "🔆",
-                    title = loc("weather.uv", "UV index"),
-                    bigValue = "${current.uvIndex}",
-                    secondLine = uvBand(current.uvIndex),
-                    body = markerScale(uvFrac, UV_SCALE_HEX),
+                    title = vm.uvTitle,
+                    bigValue = vm.uvIndexLabel,
+                    secondLine = vm.uvBandLabel,
+                    body = markerScale(vm.uvFraction, UV_SCALE_HEX),
                 ),
                 detailCard(
                     icon = "🌧️",
-                    title = loc("weather.precipitation", "Precipitation"),
-                    bigValue = "${daily0.precipProb}%",
-                    subtitle = loc("precip.subtitle", "Chance today"),
+                    title = vm.precipTitle,
+                    bigValue = vm.todayPrecipLabel,
+                    subtitle = vm.precipSubtitle,
                 ),
                 detailCard(
                     icon = "💧",
-                    title = loc("weather.humidity", "Humidity"),
-                    bigValue = "${current.humidity}%",
+                    title = vm.humidityTitle,
+                    bigValue = vm.humidityLabel,
                 ),
                 detailCard(
                     icon = "💨",
-                    title = loc("weather.wind", "Wind"),
-                    bigValue = "${current.wind} " + loc("unit.wind", "km/h"),
+                    title = vm.windTitle,
+                    bigValue = vm.windLabel,
                 ),
             ),
         )
@@ -407,21 +368,21 @@ class WeatherMainRenderer(
             items = listOf(
                 detailCard(
                     icon = "🌡️",
-                    title = loc("feels_like", "feels like"),
-                    bigValue = "${current.feelsC}°",
-                    subtitle = feelsSubtitle,
+                    title = vm.feelsTitle,
+                    bigValue = vm.feelsLabel,
+                    subtitle = vm.feelsSubtitle,
                 ),
                 detailCard(
                     icon = "👁️",
-                    title = loc("weather.visibility", "Visibility"),
-                    bigValue = "${current.visibility / 1000} " + loc("unit.visibility", "km"),
-                    subtitle = visSubtitle,
+                    title = vm.visTitle,
+                    bigValue = vm.visLabel,
+                    subtitle = vm.visSubtitle,
                 ),
                 detailCard(
                     icon = "🧭",
-                    title = loc("weather.pressure", "Pressure"),
-                    bigValue = "${current.pressure} " + loc("unit.pressure", "hPa"),
-                    body = markerScale(pressFrac, PRESS_SCALE_HEX),
+                    title = vm.pressureTitle,
+                    bigValue = vm.pressureLabel,
+                    body = markerScale(vm.pressureFraction, PRESS_SCALE_HEX),
                 ),
             ),
         )
@@ -490,11 +451,11 @@ class WeatherMainRenderer(
         )
     }
 
-    private fun DivScope.hourCell(h: HourlyPoint): Div = container(
+    private fun DivScope.hourCell(h: HourCellVm): Div = container(
         orientation = vertical,
         width = fixedSize(64),
         paddings = edgeInsets(start = 8, top = 8, end = 8, bottom = 8),
-        background = listOf(solidBackground().evaluate(color = expression<Color>(CARD_BG_EXPR))),
+        background = listOf(solidBackground().evaluate(color = expression<Color>(Theme.CARD_BG))),
         border = border(cornerRadius = 16),
         contentAlignmentHorizontal = center,
         items = listOf(
@@ -503,39 +464,35 @@ class WeatherMainRenderer(
                 width = wrapContentSize(),
                 fontSize = 13,
                 textAlignmentHorizontal = center,
-            ).evaluate(textColor = expression<Color>(SUB_COLOR_EXPR)),
+            ).evaluate(textColor = expression<Color>(Theme.SECONDARY_TEXT)),
             text(
-                text = conditionEmoji(h.condition),
+                text = h.emoji,
                 width = wrapContentSize(),
                 fontSize = 22,
                 margins = edgeInsets(top = 4),
             ),
             text(
-                text = "${h.tempC}°",
+                text = h.tempLabel,
                 width = wrapContentSize(),
                 fontSize = 16,
                 fontWeight = bold,
                 margins = edgeInsets(top = 4),
-            ).evaluate(textColor = expression<Color>(TITLE_COLOR_EXPR)),
+            ).evaluate(textColor = expression<Color>(Theme.PRIMARY_TEXT)),
         ),
     )
 
-    private fun DivScope.dailyRow(d: DailyPoint, weekMin: Int, span: Int): Div {
-        var offsetPx = ((d.tempMin - weekMin) * 100) / span
-        val fillPx = maxOf(6, ((d.tempMax - d.tempMin) * 100) / span)
-        if (offsetPx + fillPx > 100) offsetPx = 100 - fillPx
-
+    private fun DivScope.dailyRow(d: DayRowVm): Div {
         val items = buildList<Div> {
             add(
                 text(
                     text = d.weekday,
                     width = fixedSize(44),
                     fontSize = 16,
-                ).evaluate(textColor = expression<Color>(TITLE_COLOR_EXPR)),
+                ).evaluate(textColor = expression<Color>(Theme.PRIMARY_TEXT)),
             )
             add(
                 text(
-                    text = conditionEmoji(d.condition),
+                    text = d.emoji,
                     width = fixedSize(32),
                     fontSize = 18,
                     textAlignmentHorizontal = center,
@@ -543,29 +500,29 @@ class WeatherMainRenderer(
             )
             add(
                 text(
-                    text = "${d.tempMin}°",
+                    text = d.minLabel,
                     width = fixedSize(40),
                     fontSize = 15,
                     textAlignmentHorizontal = right,
-                ).evaluate(textColor = expression<Color>(SUB_COLOR_EXPR)),
+                ).evaluate(textColor = expression<Color>(Theme.SECONDARY_TEXT)),
             )
-            add(rangeBar(offsetPx, fillPx))
+            add(rangeBar(d.offsetPx, d.fillPx))
             add(
                 text(
-                    text = "${d.tempMax}°",
+                    text = d.maxLabel,
                     width = fixedSize(40),
                     fontSize = 15,
                     fontWeight = bold,
-                ).evaluate(textColor = expression<Color>(TITLE_COLOR_EXPR)),
+                ).evaluate(textColor = expression<Color>(Theme.PRIMARY_TEXT)),
             )
-            if (d.precipProb > 0) {
+            if (d.precipLabel != null) {
                 add(
                     text(
-                        text = "💧${d.precipProb}%",
+                        text = d.precipLabel,
                         width = wrapContentSize(),
                         fontSize = 12,
                         margins = edgeInsets(start = 6),
-                    ).evaluate(textColor = expression<Color>(SUB_COLOR_EXPR)),
+                    ).evaluate(textColor = expression<Color>(Theme.SECONDARY_TEXT)),
                 )
             }
         }
@@ -615,7 +572,7 @@ class WeatherMainRenderer(
         width = matchParentSize(weight = 1.0),
         margins = margins,
         paddings = edgeInsets(start = 14, top = 14, end = 14, bottom = 14),
-        background = listOf(solidBackground().evaluate(color = expression<Color>(CARD_BG_EXPR))),
+        background = listOf(solidBackground().evaluate(color = expression<Color>(Theme.CARD_BG))),
         border = border(cornerRadius = 16),
         items = buildList {
             add(
@@ -623,7 +580,7 @@ class WeatherMainRenderer(
                     text = if (icon.isBlank()) title.uppercase() else "$icon  ${title.uppercase()}",
                     width = wrapContentSize(),
                     fontSize = 12,
-                ).evaluate(textColor = expression<Color>(SUB_COLOR_EXPR)),
+                ).evaluate(textColor = expression<Color>(Theme.SECONDARY_TEXT)),
             )
             if (bigValue.isNotEmpty()) {
                 add(
@@ -633,7 +590,7 @@ class WeatherMainRenderer(
                         fontSize = 28,
                         fontWeight = bold,
                         margins = edgeInsets(top = 8),
-                    ).evaluate(textColor = expression<Color>(TITLE_COLOR_EXPR)),
+                    ).evaluate(textColor = expression<Color>(Theme.PRIMARY_TEXT)),
                 )
             }
             if (secondLine != null) {
@@ -643,7 +600,7 @@ class WeatherMainRenderer(
                         width = wrapContentSize(),
                         fontSize = 15,
                         margins = edgeInsets(top = 2),
-                    ).evaluate(textColor = expression<Color>(SUB_COLOR_EXPR)),
+                    ).evaluate(textColor = expression<Color>(Theme.SECONDARY_TEXT)),
                 )
             }
             if (body != null) {
@@ -664,7 +621,7 @@ class WeatherMainRenderer(
                         width = matchParentSize(),
                         fontSize = 13,
                         margins = edgeInsets(top = 8),
-                    ).evaluate(textColor = expression<Color>(SUB_COLOR_EXPR)),
+                    ).evaluate(textColor = expression<Color>(Theme.SECONDARY_TEXT)),
                 )
             }
         },
@@ -712,24 +669,15 @@ class WeatherMainRenderer(
         textAlignmentVertical = center,
         margins = edgeInsets(top = 6, bottom = 6),
         // Light theme: dark-gray FAB + light icon. Dark theme: light-gray FAB + dark icon.
-        background = listOf(solidBackground().evaluate(color = expression<Color>(FAB_BG_EXPR))),
+        background = listOf(solidBackground().evaluate(color = expression<Color>(Theme.FAB_BG))),
         border = border(cornerRadius = 28),
         actions = if (act == null) null else listOf(act),
-    ).evaluate(textColor = expression<Color>(FAB_ICON_EXPR))
+    ).evaluate(textColor = expression<Color>(Theme.FAB_ICON))
 
     private companion object {
         // "Install" widget popup re-show delay after tapping ×. Native set_stored_value TTL
         // (seconds); see visExpr/actCloseDelay above for why this replaces datetime arithmetic.
         const val POPUP_DELAY_LIFETIME_SECONDS = 259_200
-
-        const val TITLE_COLOR_EXPR = "@{theme == 'dark' ? '#FFFFFFFF' : '#FF1C1C1E'}"
-        const val SUB_COLOR_EXPR = "@{theme == 'dark' ? '#FF9E9EA3' : '#FF6E6E73'}"
-        const val CARD_BG_EXPR = "@{theme == 'dark' ? '#CC1C1C1E' : '#CCFFFFFF'}"
-
-        // FAB: light theme -> dark-gray bar + light icon; dark theme -> light-gray bar + dark icon.
-        const val FAB_BG_EXPR = "@{theme == 'dark' ? '#E6D8D8DD' : '#E63A3A3C'}"
-        const val FAB_ICON_EXPR = "@{theme == 'dark' ? '#FF1C1C1E' : '#FFFFFFFF'}"
-        const val HEADER_SCRIM_EXPR = "@{theme == 'dark' ? '#99000000' : '#99FFFFFF'}"
 
         // header_state ("full"/"collapsed") is a global card variable owned/written by the
         // native client (Worktree C); this card only references it by name via
@@ -756,19 +704,7 @@ class WeatherMainRenderer(
 
         const val SCALE_W = 120
         const val MARKER_W = 4
-        const val PRESS_MIN = 980
-        const val PRESS_MAX = 1040
         val UV_SCALE_HEX = listOf("#FF34C759", "#FFFFCC00", "#FFFF9500", "#FFFF3B30", "#FFAF52DE")
         val PRESS_SCALE_HEX = listOf("#FF5AC8FA", "#FF34C759", "#FFFF9500")
-
-        fun conditionEmoji(condition: ConditionCode): String = when (condition) {
-            ConditionCode.CLEAR -> "☀️"
-            ConditionCode.CLOUDY -> "☁️"
-            ConditionCode.RAIN -> "🌧️"
-            ConditionCode.SNOW -> "❄️"
-            ConditionCode.THUNDER -> "⛈️"
-            ConditionCode.FOG -> "🌫️"
-            else -> "🌡️" // ConditionCode.UNRECOGNIZED / future proto values
-        }
     }
 }

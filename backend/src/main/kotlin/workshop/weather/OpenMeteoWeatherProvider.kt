@@ -2,7 +2,9 @@ package workshop.weather
 
 import com.fasterxml.jackson.databind.JsonNode
 import java.time.LocalDateTime
+import org.slf4j.LoggerFactory
 import workshop.l10n.Localizer
+import workshop.weather.data.CityParam
 import workshop.proto.WeatherDataOuterClass.Current
 import workshop.proto.WeatherDataOuterClass.DailyPoint
 import workshop.proto.WeatherDataOuterClass.DayForecast
@@ -10,17 +12,17 @@ import workshop.proto.WeatherDataOuterClass.HourlyPoint
 import workshop.proto.WeatherDataOuterClass.WeatherData
 
 /** Real weather source: calls Open-Meteo, maps the response onto [WeatherData]. */
-class OpenMeteoWeatherProvider(private val client: OpenMeteoClient) : WeatherProvider {
+class OpenMeteoWeatherProvider(private val client: ForecastClient) : WeatherProvider {
 
-    override suspend fun provide(city: CityParam, localizer: Localizer): WeatherData {
+    private companion object {
+        private val log = LoggerFactory.getLogger(OpenMeteoWeatherProvider::class.java)
+    }
+
+    override suspend fun provide(city: CityParam, localizer: Localizer): WeatherData = try {
         val lat = city.lat
         val lon = city.lon
 
-        val root: JsonNode = try {
-            client.forecast(lat, lon)
-        } catch (t: Throwable) {
-            return MockWeatherProvider.provide(city, localizer)
-        }
+        val root: JsonNode = client.forecast(lat, lon)
 
         val currentNode = root.path("current")
         val dailyNode = root.path("daily")
@@ -104,12 +106,18 @@ class OpenMeteoWeatherProvider(private val client: OpenMeteoClient) : WeatherPro
             .setCity(current.city)
             .build()
 
-        return WeatherData.newBuilder()
+        WeatherData.newBuilder()
             .setToday(today)
             .setTomorrow(tomorrow)
             .setCurrent(current)
             .addAllHourly(hourly)
             .addAllDaily(daily)
             .build()
+    } catch (e: Exception) {
+        log.warn(
+            "OpenMeteo forecast/mapping failed for city={} lat={} lon={}; falling back to mock",
+            city.name, city.lat, city.lon, e,
+        )
+        MockWeatherProvider.provide(city, localizer)
     }
 }
