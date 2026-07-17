@@ -3,8 +3,8 @@
 __pycache__/
 *.pyc
 
-# Generated presentation render artifacts
-talk/render*/
+# Presentation / talk materials — kept local only, not pushed to remote
+talk/
 
 # macOS
 .DS_Store
