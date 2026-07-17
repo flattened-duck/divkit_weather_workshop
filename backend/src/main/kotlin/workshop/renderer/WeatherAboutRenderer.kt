@@ -9,12 +9,12 @@ import divkit.dsl.border
 import divkit.dsl.center
 import divkit.dsl.color
 import divkit.dsl.container
-import divkit.dsl.core.expression
 import divkit.dsl.data
 import divkit.dsl.divan
 import divkit.dsl.edgeInsets
 import divkit.dsl.evaluate
 import divkit.dsl.expression.divanExpression
+import divkit.dsl.expression.plus
 import divkit.dsl.gallery
 import divkit.dsl.matchParentSize
 import divkit.dsl.scope.DivScope
@@ -69,8 +69,8 @@ class WeatherAboutRenderer(
                             width = matchParentSize(),
                             height = matchParentSize(),
                             paddings = edgeInsets(start = 16, end = 16).evaluate(
-                                top = expression<Int>("@{16 + status_inset}"),
-                                bottom = expression<Int>("@{16 + nav_inset}"),
+                                top = (16 + DivVars.STATUS_INSET).divanExpression<Int>(),
+                                bottom = (16 + DivVars.NAV_INSET).divanExpression<Int>(),
                             ),
                             items = listOf(
                         // Title — theme-aware

@@ -22,7 +22,6 @@ import divkit.dsl.color
 import divkit.dsl.container
 import divkit.dsl.containerRefs
 import divkit.dsl.core.bind
-import divkit.dsl.core.expression
 import divkit.dsl.core.reference
 import divkit.dsl.core.valueArrayElement
 import divkit.dsl.custom
@@ -30,7 +29,15 @@ import divkit.dsl.data
 import divkit.dsl.divan
 import divkit.dsl.edgeInsets
 import divkit.dsl.evaluate
+import divkit.dsl.expression.and
+import divkit.dsl.expression.boolean
 import divkit.dsl.expression.divanExpression
+import divkit.dsl.expression.equalTo
+import divkit.dsl.expression.getStoredBooleanValue
+import divkit.dsl.expression.ifElse
+import divkit.dsl.expression.not
+import divkit.dsl.expression.plus
+import divkit.dsl.expression.string
 import divkit.dsl.extension
 import divkit.dsl.fadeTransition
 import divkit.dsl.fill
@@ -160,8 +167,11 @@ class WeatherMainRenderer(
         // getTimestamp/nowLocal don't exist as builtins in open DivKit 32.6.0 (confirmed via
         // div-evaluable bytecode + runtime), so the "3-day delay" uses the native
         // set_stored_value `lifetime` (seconds) TTL/expiration instead of datetime arithmetic.
-        val visExpr = "@{(!popup_dismissed && !getStoredBooleanValue('widget_set_up', false) && " +
-            "!getStoredBooleanValue('widget_popup_delayed', false)) ? 'visible' : 'gone'}"
+        val visExpr = (
+            !DivVars.POPUP_DISMISSED and
+                !getStoredBooleanValue("widget_set_up".string(), false.boolean()) and
+                !getStoredBooleanValue("widget_popup_delayed".string(), false.boolean())
+        ).ifElse("visible", "gone")
 
         val actInstallSet = action(
             logId = "popup_install",
@@ -263,26 +273,26 @@ class WeatherMainRenderer(
             contentAlignmentVertical = center,
             background = listOf(solidBackground(color("#99000000"))),
             items = listOf(popupCard),
-        ).evaluate(visibility = expression<Visibility>(visExpr))
+        ).evaluate(visibility = visExpr.divanExpression<Visibility>())
 
         // ---- Layer 0: full-screen weather background, theme-driven day/night photo swap ----
         // Selects the _day vs _night photo of the SAME condition base; no real time-of-day
         // dependency. Light theme -> day photo, dark theme -> night photo.
         val bgDayUrl = "$BG_IMAGE_BASE_URL${vm.bgBaseName}_day.png"
         val bgNightUrl = "$BG_IMAGE_BASE_URL${vm.bgBaseName}_night.png"
-        val bgUrlExpr = "@{theme == 'dark' ? '$bgNightUrl' : '$bgDayUrl'}"
+        val bgUrlExpr = (DivVars.THEME equalTo "dark").ifElse(bgNightUrl, bgDayUrl)
         val backgroundImage = image(
             width = matchParentSize(),
             height = matchParentSize(),
             scale = fill,
-        ).evaluate(imageUrl = expression<Url>(bgUrlExpr))
+        ).evaluate(imageUrl = bgUrlExpr.divanExpression<Url>())
 
         // ---- Layer 1: pinned collapsible header + scroll body ----
         val fullHeader = container(
             orientation = vertical,
             width = matchParentSize(),
             paddings = edgeInsets(start = 20, end = 20, bottom = 8)
-                .evaluate(top = expression<Int>("@{24 + status_inset}")),
+                .evaluate(top = (24 + DivVars.STATUS_INSET).divanExpression<Int>()),
             transitionIn = fadeTransition(duration = 250),
             transitionOut = fadeTransition(duration = 250),
             items = listOf(
@@ -329,7 +339,7 @@ class WeatherMainRenderer(
             orientation = vertical,
             width = matchParentSize(),
             paddings = edgeInsets(start = 20, end = 20, bottom = 8)
-                .evaluate(top = expression<Int>("@{12 + status_inset}")),
+                .evaluate(top = (12 + DivVars.STATUS_INSET).divanExpression<Int>()),
             background = listOf(solidBackground().evaluate(color = Theme.HEADER_SCRIM.divanExpression<Color>())),
             transitionIn = fadeTransition(duration = 250),
             transitionOut = fadeTransition(duration = 250),
@@ -527,10 +537,8 @@ class WeatherMainRenderer(
                 // Reserve the full-header height normally; in compact mode the header is forced
                 // compact, so reserve only the compact height (no gap). `compact` changes only on
                 // a settings toggle (never during scroll), so this reactive padding can't jitter.
-                top = expression<Int>(
-                    "@{(compact ? $HEADER_COMPACT_DP : $HEADER_EXPANDED_DP) + status_inset}",
-                ),
-                bottom = expression<Int>("@{96 + nav_inset}"),
+                top = (DivVars.COMPACT.ifElse(HEADER_COMPACT_DP, HEADER_EXPANDED_DP) + DivVars.STATUS_INSET).divanExpression<Int>(),
+                bottom = (96 + DivVars.NAV_INSET).divanExpression<Int>(),
             ),
             items = listOf(hourlyGallery, weeklyBlock, sunsetCard, detailsGrid),
         )
@@ -542,7 +550,7 @@ class WeatherMainRenderer(
             height = wrapContentSize(),
             alignmentHorizontal = right,
             alignmentVertical = bottom,
-            paddings = edgeInsets(end = 16).evaluate(bottom = expression<Int>("@{20 + nav_inset}")),
+            paddings = edgeInsets(end = 16).evaluate(bottom = (20 + DivVars.NAV_INSET).divanExpression<Int>()),
             items = listOf(
                 fab("⚙", action(logId = "fab_settings", url = url("weather-app://navigate?screen=settings")), id = "fab_settings"),
                 fab("ℹ", action(logId = "fab_about", url = url("weather-app://navigate?screen=about")), id = "fab_about"),

@@ -9,12 +9,14 @@ import divkit.dsl.border
 import divkit.dsl.center
 import divkit.dsl.color
 import divkit.dsl.container
-import divkit.dsl.core.expression
 import divkit.dsl.data
 import divkit.dsl.divan
 import divkit.dsl.edgeInsets
 import divkit.dsl.evaluate
 import divkit.dsl.expression.divanExpression
+import divkit.dsl.expression.equalTo
+import divkit.dsl.expression.ifElse
+import divkit.dsl.expression.plus
 import divkit.dsl.fixedSize
 import divkit.dsl.gallery
 import divkit.dsl.horizontal
@@ -82,8 +84,8 @@ class WeatherSettingsRenderer(
                             width = matchParentSize(),
                             height = matchParentSize(),
                             paddings = edgeInsets(start = 16, end = 16).evaluate(
-                                top = expression<Int>("@{16 + status_inset}"),
-                                bottom = expression<Int>("@{16 + nav_inset}"),
+                                top = (16 + DivVars.STATUS_INSET).divanExpression<Int>(),
+                                bottom = (16 + DivVars.NAV_INSET).divanExpression<Int>(),
                             ),
                             items = listOf(
                         // Title — theme-aware
@@ -160,7 +162,7 @@ class WeatherSettingsRenderer(
                                             paddings = edgeInsets(start = 16, top = 10, end = 16, bottom = 10),
                                             background = listOf(
                                                 solidBackground(color("#FF3A3A3C"))
-                                                    .evaluate(color = expression<Color>("@{theme_mode == 'system' ? '#FF007AFF' : '#FF3A3A3C'}")),
+                                                    .evaluate(color = (DivVars.THEME_MODE equalTo "system").ifElse("#FF007AFF", "#FF3A3A3C").divanExpression<Color>()),
                                             ),
                                             border = border(cornerRadius = 10),
                                             textColor = color("#FFFFFFFF"),
@@ -180,7 +182,7 @@ class WeatherSettingsRenderer(
                                             paddings = edgeInsets(start = 16, top = 10, end = 16, bottom = 10),
                                             background = listOf(
                                                 solidBackground(color("#FF3A3A3C"))
-                                                    .evaluate(color = expression<Color>("@{theme_mode == 'dark' ? '#FF007AFF' : '#FF3A3A3C'}")),
+                                                    .evaluate(color = (DivVars.THEME_MODE equalTo "dark").ifElse("#FF007AFF", "#FF3A3A3C").divanExpression<Color>()),
                                             ),
                                             border = border(cornerRadius = 10),
                                             textColor = color("#FFFFFFFF"),
@@ -199,7 +201,7 @@ class WeatherSettingsRenderer(
                                             paddings = edgeInsets(start = 16, top = 10, end = 16, bottom = 10),
                                             background = listOf(
                                                 solidBackground(color("#FF3A3A3C"))
-                                                    .evaluate(color = expression<Color>("@{theme_mode == 'light' ? '#FF007AFF' : '#FF3A3A3C'}")),
+                                                    .evaluate(color = (DivVars.THEME_MODE equalTo "light").ifElse("#FF007AFF", "#FF3A3A3C").divanExpression<Color>()),
                                             ),
                                             border = border(cornerRadius = 10),
                                             textColor = color("#FFFFFFFF"),
@@ -232,7 +234,7 @@ class WeatherSettingsRenderer(
                                             paddings = edgeInsets(start = 16, top = 10, end = 16, bottom = 10),
                                             background = listOf(
                                                 solidBackground(color("#FF3A3A3C"))
-                                                    .evaluate(color = expression<Color>("@{compact ? '#FF34C759' : '#FF3A3A3C'}")),
+                                                    .evaluate(color = DivVars.COMPACT.ifElse("#FF34C759", "#FF3A3A3C").divanExpression<Color>()),
                                             ),
                                             border = border(cornerRadius = 10),
                                             textColor = color("#FFFFFFFF"),
@@ -251,7 +253,7 @@ class WeatherSettingsRenderer(
                                             paddings = edgeInsets(start = 16, top = 10, end = 16, bottom = 10),
                                             background = listOf(
                                                 solidBackground(color("#FF3A3A3C"))
-                                                    .evaluate(color = expression<Color>("@{compact ? '#FF3A3A3C' : '#FF34C759'}")),
+                                                    .evaluate(color = DivVars.COMPACT.ifElse("#FF3A3A3C", "#FF34C759").divanExpression<Color>()),
                                             ),
                                             border = border(cornerRadius = 10),
                                             textColor = color("#FFFFFFFF"),

@@ -12,12 +12,13 @@ import divkit.dsl.border
 import divkit.dsl.bottom
 import divkit.dsl.center
 import divkit.dsl.container
-import divkit.dsl.core.expression
 import divkit.dsl.data
 import divkit.dsl.divan
 import divkit.dsl.edgeInsets
 import divkit.dsl.evaluate
 import divkit.dsl.expression.divanExpression
+import divkit.dsl.expression.ifElse
+import divkit.dsl.expression.plus
 import divkit.dsl.extension
 import divkit.dsl.fill
 import divkit.dsl.fixedSize
@@ -83,7 +84,7 @@ class WeatherZeroRenderer(
             orientation = vertical,
             width = matchParentSize(),
             paddings = edgeInsets(start = 20, end = 20, bottom = 8)
-                .evaluate(top = expression<Int>("@{24 + status_inset}")),
+                .evaluate(top = (24 + DivVars.STATUS_INSET).divanExpression<Int>()),
             items = listOf(
                 text(
                     text = "—",
@@ -128,7 +129,7 @@ class WeatherZeroRenderer(
             orientation = vertical,
             width = matchParentSize(),
             paddings = edgeInsets(start = 20, end = 20, bottom = 8)
-                .evaluate(top = expression<Int>("@{12 + status_inset}")),
+                .evaluate(top = (12 + DivVars.STATUS_INSET).divanExpression<Int>()),
             background = listOf(solidBackground().evaluate(color = Theme.HEADER_SCRIM.divanExpression<Color>())),
             items = listOf(
                 text(
@@ -220,8 +221,8 @@ class WeatherZeroRenderer(
             width = matchParentSize(),
             height = matchParentSize(),
             paddings = edgeInsets().evaluate(
-                top = expression<Int>("@{(compact ? 76 : 210) + status_inset}"),
-                bottom = expression<Int>("@{96 + nav_inset}"),
+                top = (DivVars.COMPACT.ifElse(76, 210) + DivVars.STATUS_INSET).divanExpression<Int>(),
+                bottom = (96 + DivVars.NAV_INSET).divanExpression<Int>(),
             ),
             items = listOf(hourlyGallery, weeklyBlock, sunsetCard, detailsGrid),
         )
@@ -232,7 +233,7 @@ class WeatherZeroRenderer(
             height = wrapContentSize(),
             alignmentHorizontal = right,
             alignmentVertical = bottom,
-            paddings = edgeInsets(end = 16).evaluate(bottom = expression<Int>("@{20 + nav_inset}")),
+            paddings = edgeInsets(end = 16).evaluate(bottom = (20 + DivVars.NAV_INSET).divanExpression<Int>()),
             items = listOf(
                 fab("⚙", action(logId = "fab_settings", url = url("weather-app://navigate?screen=settings")), id = "fab_settings"),
                 fab("ℹ", action(logId = "fab_about", url = url("weather-app://navigate?screen=about")), id = "fab_about"),

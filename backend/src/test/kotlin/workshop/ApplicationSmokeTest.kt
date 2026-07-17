@@ -59,7 +59,7 @@ class ApplicationSmokeTest {
         application { module() }
         val resp = client.get("/document?lang=ru")
         val body = resp.bodyAsText()
-        assertTrue(body.contains("@{theme == 'dark'"), "Must contain reactive theme variable expression")
+        assertTrue(body.contains("@{(theme == 'dark')"), "Must contain reactive theme variable expression")
         assertFalse(body.contains("getStoredStringValue"), "Must NOT contain non-reactive getStoredStringValue")
     }
 
