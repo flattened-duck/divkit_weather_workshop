@@ -18,6 +18,8 @@ class ApplicationSmokeTest {
         assertEquals(HttpStatusCode.OK, resp.status)
         val body = resp.bodyAsText()
         assertTrue(body.contains("\"templates\""), "Must contain 'templates' key")
+        assertTrue(body.contains("\"hour_cell\""), "Must register the 'hour_cell' template")
+        assertTrue(body.contains("\"daily_row\""), "Must register the 'daily_row' template")
         assertTrue(body.contains("\"main\""), "Must contain 'main' screen")
         assertTrue(body.contains("\"settings\""), "Must contain 'settings' screen")
         assertTrue(body.contains("\"about\""), "Must contain 'about' screen")

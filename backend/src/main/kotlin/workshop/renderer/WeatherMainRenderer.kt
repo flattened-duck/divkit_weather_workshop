@@ -5,6 +5,7 @@ import divkit.dsl.Color
 import divkit.dsl.Div
 import divkit.dsl.Divan
 import divkit.dsl.EdgeInsets
+import divkit.dsl.Size
 import divkit.dsl.Url
 import divkit.dsl.Visibility
 import divkit.dsl.action
@@ -19,7 +20,10 @@ import divkit.dsl.center
 import divkit.dsl.changeBoundsTransition
 import divkit.dsl.color
 import divkit.dsl.container
+import divkit.dsl.containerRefs
+import divkit.dsl.core.bind
 import divkit.dsl.core.expression
+import divkit.dsl.core.reference
 import divkit.dsl.core.valueArrayElement
 import divkit.dsl.custom
 import divkit.dsl.data
@@ -32,25 +36,28 @@ import divkit.dsl.fill
 import divkit.dsl.fit
 import divkit.dsl.fixedSize
 import divkit.dsl.gallery
+import divkit.dsl.gone
 import divkit.dsl.grid
 import divkit.dsl.horizontal
 import divkit.dsl.image
 import divkit.dsl.linearGradient
 import divkit.dsl.matchParentSize
 import divkit.dsl.overlap
+import divkit.dsl.render
 import divkit.dsl.right
 import divkit.dsl.scope.DivScope
 import divkit.dsl.solidBackground
 import divkit.dsl.state
 import divkit.dsl.stateItem
+import divkit.dsl.template
 import divkit.dsl.text
+import divkit.dsl.textRefs
 import divkit.dsl.top
 import divkit.dsl.url
 import divkit.dsl.vertical
+import divkit.dsl.visible
 import divkit.dsl.wrapContentSize
 import kotlin.math.roundToInt
-import workshop.renderer.data.DayRowVm
-import workshop.renderer.data.HourCellVm
 import workshop.renderer.data.WeatherMainViewModel
 
 class WeatherMainRenderer(
@@ -65,6 +72,88 @@ class WeatherMainRenderer(
     }
 
     private fun buildCard(scope: DivScope) = with(scope) {
+        val hcTime = reference<String>("time")
+        val hcEmoji = reference<String>("emoji")
+        val hcTemp = reference<String>("temp")
+
+        val drWeekday = reference<String>("weekday")
+        val drEmoji = reference<String>("emoji")
+        val drMin = reference<String>("min")
+        val drMax = reference<String>("max")
+        val drBarFill = reference<Size>("bar_fill")
+        val drBarOffset = reference<EdgeInsets>("bar_offset")
+        val drPrecip = reference<String>("precip")
+        val drPrecipVis = reference<Visibility>("precip_vis")
+
+        val hourCellTemplate = template("hour_cell") {
+            container(
+                orientation = vertical,
+                width = fixedSize(64),
+                paddings = edgeInsets(start = 8, top = 8, end = 8, bottom = 8),
+                background = listOf(solidBackground().evaluate(color = expression<Color>(Theme.CARD_BG))),
+                border = border(cornerRadius = 16),
+                contentAlignmentHorizontal = center,
+                items = listOf(
+                    text(
+                        width = wrapContentSize(),
+                        fontSize = 13,
+                        textAlignmentHorizontal = center,
+                    ).evaluate(textColor = expression<Color>(Theme.SECONDARY_TEXT)) + textRefs(text = hcTime),
+                    text(
+                        width = wrapContentSize(),
+                        fontSize = 22,
+                        margins = edgeInsets(top = 4),
+                    ) + textRefs(text = hcEmoji),
+                    text(
+                        width = wrapContentSize(),
+                        fontSize = 16,
+                        fontWeight = bold,
+                        margins = edgeInsets(top = 4),
+                    ).evaluate(textColor = expression<Color>(Theme.PRIMARY_TEXT)) + textRefs(text = hcTemp),
+                ),
+            )
+        }
+
+        val dailyRowTemplate = template("daily_row") {
+            container(
+                orientation = horizontal,
+                width = matchParentSize(),
+                paddings = edgeInsets(top = 10, bottom = 10, start = 8, end = 8),
+                contentAlignmentVertical = center,
+                items = listOf(
+                    text(width = fixedSize(44), fontSize = 16)
+                        .evaluate(textColor = expression<Color>(Theme.PRIMARY_TEXT)) + textRefs(text = drWeekday),
+                    text(width = fixedSize(32), fontSize = 18, textAlignmentHorizontal = center)
+                        + textRefs(text = drEmoji),
+                    text(width = fixedSize(40), fontSize = 15, textAlignmentHorizontal = right)
+                        .evaluate(textColor = expression<Color>(Theme.SECONDARY_TEXT)) + textRefs(text = drMin),
+                    // rangeBar inlined: outer track constant; inner fill's width+margins are refs
+                    container(
+                        orientation = overlap,
+                        width = fixedSize(100),
+                        height = fixedSize(6),
+                        margins = edgeInsets(start = 8, end = 8),
+                        border = border(cornerRadius = 3),
+                        background = listOf(solidBackground(color("#33FFFFFF"))),
+                        items = listOf(
+                            container(
+                                height = fixedSize(6),
+                                border = border(cornerRadius = 3),
+                                background = listOf(solidBackground(color("#FFFF9500"))),
+                            ) + containerRefs(width = drBarFill, margins = drBarOffset),
+                        ),
+                    ),
+                    text(width = fixedSize(40), fontSize = 15, fontWeight = bold)
+                        .evaluate(textColor = expression<Color>(Theme.PRIMARY_TEXT)) + textRefs(text = drMax),
+                    // precip cell: ALWAYS present; text + visibility are refs (templates can't
+                    // conditionally include children; visibility = gone reserves no space)
+                    text(width = wrapContentSize(), fontSize = 12, margins = edgeInsets(start = 6))
+                        .evaluate(textColor = expression<Color>(Theme.SECONDARY_TEXT))
+                        + textRefs(text = drPrecip, visibility = drPrecipVis),
+                ),
+            )
+        }
+
         // Stored Values demo: show ⟺ not dismissed this session AND widget not installed
         // AND not currently within the delayed re-show TTL window.
         // getTimestamp/nowLocal don't exist as builtins in open DivKit 32.6.0 (confirmed via
@@ -296,7 +385,14 @@ class WeatherMainRenderer(
             height = wrapContentSize(),
             paddings = edgeInsets(start = 16, end = 16),
             itemSpacing = 12,
-            items = vm.hourly.map { hourCell(it) },
+            items = vm.hourly.map { h ->
+                render(
+                    hourCellTemplate,
+                    hcTime bind h.time,
+                    hcEmoji bind h.emoji,
+                    hcTemp bind h.tempLabel,
+                )
+            },
         )
 
         val weeklyBlock = container(
@@ -306,7 +402,20 @@ class WeatherMainRenderer(
             background = listOf(solidBackground().evaluate(color = expression<Color>(Theme.CARD_BG))),
             border = border(cornerRadius = 16),
             paddings = edgeInsets(start = 8, top = 8, end = 8, bottom = 8),
-            items = vm.daily.map { dailyRow(it) },
+            items = vm.daily.map { d ->
+                val vis: Visibility = if (d.precipLabel != null) visible else gone
+                render(
+                    dailyRowTemplate,
+                    drWeekday bind d.weekday,
+                    drEmoji bind d.emoji,
+                    drMin bind d.minLabel,
+                    drBarFill bind fixedSize(d.fillPx),
+                    drBarOffset bind edgeInsets(start = d.offsetPx),
+                    drMax bind d.maxLabel,
+                    drPrecip bind (d.precipLabel ?: ""),
+                    drPrecipVis bind vis,
+                )
+            },
         )
 
         val sunsetArc = custom(
@@ -450,109 +559,6 @@ class WeatherMainRenderer(
             ),
         )
     }
-
-    private fun DivScope.hourCell(h: HourCellVm): Div = container(
-        orientation = vertical,
-        width = fixedSize(64),
-        paddings = edgeInsets(start = 8, top = 8, end = 8, bottom = 8),
-        background = listOf(solidBackground().evaluate(color = expression<Color>(Theme.CARD_BG))),
-        border = border(cornerRadius = 16),
-        contentAlignmentHorizontal = center,
-        items = listOf(
-            text(
-                text = h.time,
-                width = wrapContentSize(),
-                fontSize = 13,
-                textAlignmentHorizontal = center,
-            ).evaluate(textColor = expression<Color>(Theme.SECONDARY_TEXT)),
-            text(
-                text = h.emoji,
-                width = wrapContentSize(),
-                fontSize = 22,
-                margins = edgeInsets(top = 4),
-            ),
-            text(
-                text = h.tempLabel,
-                width = wrapContentSize(),
-                fontSize = 16,
-                fontWeight = bold,
-                margins = edgeInsets(top = 4),
-            ).evaluate(textColor = expression<Color>(Theme.PRIMARY_TEXT)),
-        ),
-    )
-
-    private fun DivScope.dailyRow(d: DayRowVm): Div {
-        val items = buildList<Div> {
-            add(
-                text(
-                    text = d.weekday,
-                    width = fixedSize(44),
-                    fontSize = 16,
-                ).evaluate(textColor = expression<Color>(Theme.PRIMARY_TEXT)),
-            )
-            add(
-                text(
-                    text = d.emoji,
-                    width = fixedSize(32),
-                    fontSize = 18,
-                    textAlignmentHorizontal = center,
-                ),
-            )
-            add(
-                text(
-                    text = d.minLabel,
-                    width = fixedSize(40),
-                    fontSize = 15,
-                    textAlignmentHorizontal = right,
-                ).evaluate(textColor = expression<Color>(Theme.SECONDARY_TEXT)),
-            )
-            add(rangeBar(d.offsetPx, d.fillPx))
-            add(
-                text(
-                    text = d.maxLabel,
-                    width = fixedSize(40),
-                    fontSize = 15,
-                    fontWeight = bold,
-                ).evaluate(textColor = expression<Color>(Theme.PRIMARY_TEXT)),
-            )
-            if (d.precipLabel != null) {
-                add(
-                    text(
-                        text = d.precipLabel,
-                        width = wrapContentSize(),
-                        fontSize = 12,
-                        margins = edgeInsets(start = 6),
-                    ).evaluate(textColor = expression<Color>(Theme.SECONDARY_TEXT)),
-                )
-            }
-        }
-
-        return container(
-            orientation = horizontal,
-            width = matchParentSize(),
-            paddings = edgeInsets(top = 10, bottom = 10, start = 8, end = 8),
-            contentAlignmentVertical = center,
-            items = items,
-        )
-    }
-
-    private fun DivScope.rangeBar(offsetPx: Int, fillPx: Int): Div = container(
-        orientation = overlap,
-        width = fixedSize(100),
-        height = fixedSize(6),
-        margins = edgeInsets(start = 8, end = 8),
-        border = border(cornerRadius = 3),
-        background = listOf(solidBackground(color("#33FFFFFF"))),
-        items = listOf(
-            container(
-                width = fixedSize(fillPx),
-                height = fixedSize(6),
-                margins = edgeInsets(start = offsetPx),
-                border = border(cornerRadius = 3),
-                background = listOf(solidBackground(color("#FFFF9500"))),
-            ),
-        ),
-    )
 
     private fun DivScope.detailCard(
         icon: String,
