@@ -17,6 +17,7 @@ import divkit.dsl.data
 import divkit.dsl.divan
 import divkit.dsl.edgeInsets
 import divkit.dsl.evaluate
+import divkit.dsl.expression.divanExpression
 import divkit.dsl.extension
 import divkit.dsl.fill
 import divkit.dsl.fixedSize
@@ -75,7 +76,7 @@ class WeatherZeroRenderer(
         val background = container(
             width = matchParentSize(),
             height = matchParentSize(),
-            background = listOf(solidBackground().evaluate(color = expression<Color>(Theme.SCREEN_BG))),
+            background = listOf(solidBackground().evaluate(color = Theme.SCREEN_BG.divanExpression<Color>())),
         )
 
         val fullHeader = container(
@@ -89,19 +90,19 @@ class WeatherZeroRenderer(
                     width = wrapContentSize(),
                     fontSize = 20,
                     fontWeight = bold,
-                ).evaluate(textColor = expression<Color>(Theme.PRIMARY_TEXT)),
+                ).evaluate(textColor = Theme.PRIMARY_TEXT.divanExpression<Color>()),
                 text(
                     text = "—°",
                     width = wrapContentSize(),
                     fontSize = 72,
                     fontWeight = bold,
                     margins = edgeInsets(top = 4),
-                ).evaluate(textColor = expression<Color>(Theme.PRIMARY_TEXT)),
+                ).evaluate(textColor = Theme.PRIMARY_TEXT.divanExpression<Color>()),
                 text(
                     text = "—",
                     width = wrapContentSize(),
                     fontSize = 18,
-                ).evaluate(textColor = expression<Color>(Theme.SECONDARY_TEXT)),
+                ).evaluate(textColor = Theme.SECONDARY_TEXT.divanExpression<Color>()),
                 container(
                     orientation = horizontal,
                     width = wrapContentSize(),
@@ -111,13 +112,13 @@ class WeatherZeroRenderer(
                             text = "↑ —°",
                             width = wrapContentSize(),
                             fontSize = 16,
-                        ).evaluate(textColor = expression<Color>(Theme.PRIMARY_TEXT)),
+                        ).evaluate(textColor = Theme.PRIMARY_TEXT.divanExpression<Color>()),
                         text(
                             text = "  ↓ —°",
                             width = wrapContentSize(),
                             fontSize = 16,
                             margins = edgeInsets(start = 12),
-                        ).evaluate(textColor = expression<Color>(Theme.SECONDARY_TEXT)),
+                        ).evaluate(textColor = Theme.SECONDARY_TEXT.divanExpression<Color>()),
                     ),
                 ),
             ),
@@ -128,20 +129,20 @@ class WeatherZeroRenderer(
             width = matchParentSize(),
             paddings = edgeInsets(start = 20, end = 20, bottom = 8)
                 .evaluate(top = expression<Int>("@{12 + status_inset}")),
-            background = listOf(solidBackground().evaluate(color = expression<Color>(Theme.HEADER_SCRIM))),
+            background = listOf(solidBackground().evaluate(color = Theme.HEADER_SCRIM.divanExpression<Color>())),
             items = listOf(
                 text(
                     text = "—",
                     width = wrapContentSize(),
                     fontSize = 17,
                     fontWeight = bold,
-                ).evaluate(textColor = expression<Color>(Theme.PRIMARY_TEXT)),
+                ).evaluate(textColor = Theme.PRIMARY_TEXT.divanExpression<Color>()),
                 text(
                     text = "—  |  —",
                     width = wrapContentSize(),
                     fontSize = 15,
                     margins = edgeInsets(top = 2),
-                ).evaluate(textColor = expression<Color>(Theme.SECONDARY_TEXT)),
+                ).evaluate(textColor = Theme.SECONDARY_TEXT.divanExpression<Color>()),
             ),
         )
 
@@ -172,7 +173,7 @@ class WeatherZeroRenderer(
             orientation = vertical,
             width = matchParentSize(),
             margins = edgeInsets(start = 16, top = 16, end = 16),
-            background = listOf(solidBackground().evaluate(color = expression<Color>(Theme.CARD_BG))),
+            background = listOf(solidBackground().evaluate(color = Theme.CARD_BG.divanExpression<Color>())),
             border = border(cornerRadius = 16),
             paddings = edgeInsets(start = 8, top = 8, end = 8, bottom = 8),
             items = List(7) { render(dailyRowSkeletonTemplate) },
@@ -279,7 +280,7 @@ class WeatherZeroRenderer(
         width = matchParentSize(weight = 1.0),
         margins = margins,
         paddings = edgeInsets(start = 14, top = 14, end = 14, bottom = 14),
-        background = listOf(solidBackground().evaluate(color = expression<Color>(Theme.CARD_BG))),
+        background = listOf(solidBackground().evaluate(color = Theme.CARD_BG.divanExpression<Color>())),
         border = border(cornerRadius = 16),
         items = buildList {
             add(
@@ -287,7 +288,7 @@ class WeatherZeroRenderer(
                     text = if (icon.isBlank()) title.uppercase() else "$icon  ${title.uppercase()}",
                     width = wrapContentSize(),
                     fontSize = 12,
-                ).evaluate(textColor = expression<Color>(Theme.SECONDARY_TEXT)),
+                ).evaluate(textColor = Theme.SECONDARY_TEXT.divanExpression<Color>()),
             )
             add(shimmerBar(width = fixedSize(90), height = fixedSize(28), margins = edgeInsets(top = 8)))
             if (bodyHeight != null) {
@@ -306,7 +307,7 @@ class WeatherZeroRenderer(
                         width = matchParentSize(),
                         fontSize = 13,
                         margins = edgeInsets(top = 8),
-                    ).evaluate(textColor = expression<Color>(Theme.SECONDARY_TEXT)),
+                    ).evaluate(textColor = Theme.SECONDARY_TEXT.divanExpression<Color>()),
                 )
             }
         },
@@ -321,10 +322,10 @@ class WeatherZeroRenderer(
         textAlignmentHorizontal = center,
         textAlignmentVertical = center,
         margins = edgeInsets(top = 6, bottom = 6),
-        background = listOf(solidBackground().evaluate(color = expression<Color>(Theme.FAB_BG))),
+        background = listOf(solidBackground().evaluate(color = Theme.FAB_BG.divanExpression<Color>())),
         border = border(cornerRadius = 28),
         actions = if (act == null) null else listOf(act),
-    ).evaluate(textColor = expression<Color>(Theme.FAB_ICON))
+    ).evaluate(textColor = Theme.FAB_ICON.divanExpression<Color>())
 
     private companion object {
         // DivKit treats the `empty://` scheme as "no image": the image is never loaded (so the

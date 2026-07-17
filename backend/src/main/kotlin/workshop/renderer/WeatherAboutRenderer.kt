@@ -14,6 +14,7 @@ import divkit.dsl.data
 import divkit.dsl.divan
 import divkit.dsl.edgeInsets
 import divkit.dsl.evaluate
+import divkit.dsl.expression.divanExpression
 import divkit.dsl.gallery
 import divkit.dsl.matchParentSize
 import divkit.dsl.scope.DivScope
@@ -34,7 +35,7 @@ class WeatherAboutRenderer(
         width = matchParentSize(),
         margins = edgeInsets(bottom = 12),
         paddings = edgeInsets(start = 16, top = 16, end = 16, bottom = 16),
-        background = listOf(solidBackground(color("#FFFFFFFF")).evaluate(color = expression<Color>(Theme.SURFACE))),
+        background = listOf(solidBackground(color("#FFFFFFFF")).evaluate(color = Theme.SURFACE.divanExpression<Color>())),
         border = border(cornerRadius = 16),
         items = if (header != null) {
             listOf(
@@ -45,7 +46,7 @@ class WeatherAboutRenderer(
                     fontWeight = bold,
                     textColor = color("#FF1C1C1E"),
                     margins = edgeInsets(bottom = 8),
-                ).evaluate(textColor = expression<Color>(Theme.PRIMARY_TEXT)),
+                ).evaluate(textColor = Theme.PRIMARY_TEXT.divanExpression<Color>()),
             ) + items
         } else {
             items
@@ -60,7 +61,7 @@ class WeatherAboutRenderer(
                     orientation = vertical,
                     width = matchParentSize(),
                     height = matchParentSize(),
-                    background = listOf(solidBackground(color("#FFF2F2F7")).evaluate(color = expression<Color>(Theme.SCREEN_BG))),
+                    background = listOf(solidBackground(color("#FFF2F2F7")).evaluate(color = Theme.SCREEN_BG.divanExpression<Color>())),
                     items = listOf(
                         gallery(
                             id = "about_scroll",
@@ -80,7 +81,7 @@ class WeatherAboutRenderer(
                             fontWeight = bold,
                             textColor = color("#FF1C1C1E"),
                             margins = edgeInsets(bottom = 16),
-                        ).evaluate(textColor = expression<Color>(Theme.PRIMARY_TEXT)),
+                        ).evaluate(textColor = Theme.PRIMARY_TEXT.divanExpression<Color>()),
 
                         // ── Info card: app name + version ───────────────────────────
                         card(
@@ -93,7 +94,7 @@ class WeatherAboutRenderer(
                                     fontWeight = bold,
                                     textColor = color("#FF1C1C1E"),
                                     margins = edgeInsets(bottom = 4),
-                                ).evaluate(textColor = expression<Color>(Theme.PRIMARY_TEXT)),
+                                ).evaluate(textColor = Theme.PRIMARY_TEXT.divanExpression<Color>()),
                                 text(
                                     width = wrapContentSize(),
                                     text = localizer.getOrDefault("about.version", "Version 1.0.0"),

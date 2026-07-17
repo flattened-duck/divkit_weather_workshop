@@ -7,10 +7,10 @@ import divkit.dsl.border
 import divkit.dsl.center
 import divkit.dsl.color
 import divkit.dsl.container
-import divkit.dsl.core.expression
 import divkit.dsl.divanPatch
 import divkit.dsl.edgeInsets
 import divkit.dsl.evaluate
+import divkit.dsl.expression.divanExpression
 import divkit.dsl.matchParentSize
 import divkit.dsl.patch
 import divkit.dsl.patchChange
@@ -45,7 +45,7 @@ class CitySearchRenderer(private val vm: CitySearchViewModel) {
                     margins = edgeInsets(top = 6),
                     border = border(cornerRadius = 10),
                     background = listOf(
-                        solidBackground(color("#FFFFFFFF")).evaluate(color = expression<Color>(Theme.SURFACE)),
+                        solidBackground(color("#FFFFFFFF")).evaluate(color = Theme.SURFACE.divanExpression<Color>()),
                     ),
                     action = action(
                         logId = "set_city",

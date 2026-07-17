@@ -14,6 +14,7 @@ import divkit.dsl.data
 import divkit.dsl.divan
 import divkit.dsl.edgeInsets
 import divkit.dsl.evaluate
+import divkit.dsl.expression.divanExpression
 import divkit.dsl.fixedSize
 import divkit.dsl.gallery
 import divkit.dsl.horizontal
@@ -39,7 +40,7 @@ class WeatherSettingsRenderer(
         width = matchParentSize(),
         margins = edgeInsets(bottom = 12),
         paddings = edgeInsets(start = 16, top = 16, end = 16, bottom = 16),
-        background = listOf(solidBackground(color("#FFFFFFFF")).evaluate(color = expression<Color>(Theme.SURFACE))),
+        background = listOf(solidBackground(color("#FFFFFFFF")).evaluate(color = Theme.SURFACE.divanExpression<Color>())),
         border = border(cornerRadius = 16),
         items = if (header != null) {
             listOf(
@@ -50,7 +51,7 @@ class WeatherSettingsRenderer(
                     fontWeight = bold,
                     textColor = color("#FF1C1C1E"),
                     margins = edgeInsets(bottom = 8),
-                ).evaluate(textColor = expression<Color>(Theme.PRIMARY_TEXT)),
+                ).evaluate(textColor = Theme.PRIMARY_TEXT.divanExpression<Color>()),
             ) + items
         } else {
             items
@@ -73,7 +74,7 @@ class WeatherSettingsRenderer(
                     orientation = vertical,
                     width = matchParentSize(),
                     height = matchParentSize(),
-                    background = listOf(solidBackground(color("#FFF2F2F7")).evaluate(color = expression<Color>(Theme.SCREEN_BG))),
+                    background = listOf(solidBackground(color("#FFF2F2F7")).evaluate(color = Theme.SCREEN_BG.divanExpression<Color>())),
                     items = listOf(
                         gallery(
                             id = "settings_scroll",
@@ -93,7 +94,7 @@ class WeatherSettingsRenderer(
                             fontWeight = bold,
                             textColor = color("#FF1C1C1E"),
                             margins = edgeInsets(bottom = 16),
-                        ).evaluate(textColor = expression<Color>(Theme.PRIMARY_TEXT)),
+                        ).evaluate(textColor = Theme.PRIMARY_TEXT.divanExpression<Color>()),
 
                         // ── City-search card ────────────────────────────────────────
                         card(
@@ -111,11 +112,11 @@ class WeatherSettingsRenderer(
                                     keyboardType = single_line_text,
                                     paddings = edgeInsets(start = 12, top = 10, end = 12, bottom = 10),
                                     background = listOf(
-                                        solidBackground(color("#FFF2F2F7")).evaluate(color = expression<Color>(Theme.INPUT_FIELD)),
+                                        solidBackground(color("#FFF2F2F7")).evaluate(color = Theme.INPUT_FIELD.divanExpression<Color>()),
                                     ),
                                     border = border(cornerRadius = 10),
                                     enterKeyActions = listOf(searchAction),
-                                ).evaluate(textColor = expression<Color>(Theme.PRIMARY_TEXT)),
+                                ).evaluate(textColor = Theme.PRIMARY_TEXT.divanExpression<Color>()),
                                 text(
                                     id = "city_search_button",
                                     width = matchParentSize(),
