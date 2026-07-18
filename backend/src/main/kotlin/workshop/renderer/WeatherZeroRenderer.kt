@@ -4,7 +4,6 @@ import divkit.dsl.Action
 import divkit.dsl.Div
 import divkit.dsl.Divan
 import divkit.dsl.EdgeInsets
-import divkit.dsl.Size
 import divkit.dsl.action
 import divkit.dsl.bold
 import divkit.dsl.border
@@ -19,11 +18,9 @@ import divkit.dsl.expression.divanExpression
 import divkit.dsl.expression.ifElse
 import divkit.dsl.expression.plus
 import divkit.dsl.extension
-import divkit.dsl.fill
 import divkit.dsl.fixedSize
 import divkit.dsl.gallery
 import divkit.dsl.horizontal
-import divkit.dsl.image
 import divkit.dsl.matchParentSize
 import divkit.dsl.overlap
 import divkit.dsl.render
@@ -32,7 +29,6 @@ import divkit.dsl.scope.DivScope
 import divkit.dsl.solidBackground
 import divkit.dsl.state
 import divkit.dsl.stateItem
-import divkit.dsl.template
 import divkit.dsl.text
 import divkit.dsl.top
 import divkit.dsl.url
@@ -60,19 +56,6 @@ class WeatherZeroRenderer(
     private fun loc(key: String, fallback: String): String = localizer.getOrDefault(key, fallback)
 
     private fun buildCard(scope: DivScope) = with(scope) {
-        val hourCellSkeletonTemplate = template("hour_cell_skeleton") {
-            shimmerBar(width = fixedSize(64), height = fixedSize(90))
-        }
-
-        val dailyRowSkeletonTemplate = template("daily_row_skeleton") {
-            container(
-                orientation = horizontal,
-                width = matchParentSize(),
-                paddings = edgeInsets(top = 10, bottom = 10, start = 8, end = 8),
-                items = listOf(shimmerBar(width = matchParentSize(), height = fixedSize(20))),
-            )
-        }
-
         val background = container(
             width = matchParentSize(),
             height = matchParentSize(),
@@ -166,7 +149,7 @@ class WeatherZeroRenderer(
             height = wrapContentSize(),
             paddings = edgeInsets(start = 16, end = 16),
             itemSpacing = 12,
-            items = List(8) { render(hourCellSkeletonTemplate) },
+            items = List(8) { render(ZeroTemplates.HourCellSkeleton.template) },
         )
 
         val weeklyBlock = container(
@@ -176,7 +159,7 @@ class WeatherZeroRenderer(
             background = listOf(solidBackground().evaluate(color = Theme.CARD_BG.divanExpression())),
             border = border(cornerRadius = 16),
             paddings = edgeInsets(start = 8, top = 8, end = 8, bottom = 8),
-            items = List(7) { render(dailyRowSkeletonTemplate) },
+            items = List(7) { render(ZeroTemplates.DailyRowSkeleton.template) },
         )
 
         val sunsetCard = detailSkeletonCard(
@@ -270,24 +253,6 @@ class WeatherZeroRenderer(
         )
     }
 
-    /** A shimmering placeholder bar: an `image` div pointed at an image that never resolves, so
-     *  [com.yandex.div.shimmer.DivShimmerExtensionHandler] never sees a loaded image and the
-     *  shimmer animation never stops. */
-    private fun DivScope.shimmerBar(
-        width: Size,
-        height: Size,
-        cornerRadius: Int = 12,
-        margins: EdgeInsets? = null,
-    ): Div = image(
-        imageUrl = url(SKELETON_IMAGE_URL),
-        width = width,
-        height = height,
-        scale = fill,
-        border = border(cornerRadius = cornerRadius),
-        margins = margins,
-        extensions = listOf(extension(id = "shimmer")),
-    )
-
     private fun DivScope.detailSkeletonCard(
         icon: String,
         title: String,
@@ -356,12 +321,4 @@ class WeatherZeroRenderer(
         border = border(cornerRadius = 28),
         actions = if (act == null) null else listOf(act),
     ).evaluate(textColor = Theme.FAB_ICON.divanExpression())
-
-    private companion object {
-        // DivKit treats the `empty://` scheme as "no image": the image is never loaded (so the
-        // shimmer extension, which early-returns once isImageLoaded/isImagePreview, keeps
-        // animating) AND it does not count as a load error, so no visual-error badge appears
-        // (unlike a real DNS-failing URL such as an .invalid TLD).
-        const val SKELETON_IMAGE_URL = "empty://"
-    }
 }
