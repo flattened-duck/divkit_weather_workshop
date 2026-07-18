@@ -1,6 +1,5 @@
 package workshop.renderer
 
-import divkit.dsl.Color
 import divkit.dsl.Div
 import divkit.dsl.Divan
 import divkit.dsl.action
@@ -42,7 +41,7 @@ class WeatherSettingsRenderer(
         width = matchParentSize(),
         margins = edgeInsets(bottom = 12),
         paddings = edgeInsets(start = 16, top = 16, end = 16, bottom = 16),
-        background = listOf(solidBackground(color("#FFFFFFFF")).evaluate(color = Theme.SURFACE.divanExpression<Color>())),
+        background = listOf(solidBackground().evaluate(color = Theme.SURFACE.divanExpression())),
         border = border(cornerRadius = 16),
         items = if (header != null) {
             listOf(
@@ -51,9 +50,8 @@ class WeatherSettingsRenderer(
                     text = header,
                     fontSize = 17,
                     fontWeight = bold,
-                    textColor = color("#FF1C1C1E"),
                     margins = edgeInsets(bottom = 8),
-                ).evaluate(textColor = Theme.PRIMARY_TEXT.divanExpression<Color>()),
+                ).evaluate(textColor = Theme.PRIMARY_TEXT.divanExpression()),
             ) + items
         } else {
             items
@@ -76,7 +74,7 @@ class WeatherSettingsRenderer(
                     orientation = vertical,
                     width = matchParentSize(),
                     height = matchParentSize(),
-                    background = listOf(solidBackground(color("#FFF2F2F7")).evaluate(color = Theme.SCREEN_BG.divanExpression<Color>())),
+                    background = listOf(solidBackground().evaluate(color = Theme.SCREEN_BG.divanExpression())),
                     items = listOf(
                         gallery(
                             id = "settings_scroll",
@@ -84,251 +82,360 @@ class WeatherSettingsRenderer(
                             width = matchParentSize(),
                             height = matchParentSize(),
                             paddings = edgeInsets(start = 16, end = 16).evaluate(
-                                top = (16 + DivVars.STATUS_INSET).divanExpression<Int>(),
-                                bottom = (16 + DivVars.NAV_INSET).divanExpression<Int>(),
+                                top = (16 + DivVars.STATUS_INSET).divanExpression(),
+                                bottom = (16 + DivVars.NAV_INSET).divanExpression(),
                             ),
                             items = listOf(
-                        // Title — theme-aware
-                        text(
-                            width = wrapContentSize(),
-                            text = localizer.getOrDefault("settings.title", "Settings"),
-                            fontSize = 28,
-                            fontWeight = bold,
-                            textColor = color("#FF1C1C1E"),
-                            margins = edgeInsets(bottom = 16),
-                        ).evaluate(textColor = Theme.PRIMARY_TEXT.divanExpression<Color>()),
-
-                        // ── City-search card ────────────────────────────────────────
-                        card(
-                            header = localizer.getOrDefault("settings.city.label", "City"),
-                            items = listOf(
-                                input(
-                                    id = "city_search_input",
-                                    width = matchParentSize(),
-                                    height = fixedSize(44),
-                                    textVariable = "city_query",
-                                    hintText = localizer.getOrDefault("city.search.placeholder", "Поиск города"),
-                                    hintColor = color("#FF8E8E93"),
-                                    textColor = color("#FF1C1C1E"),
-                                    fontSize = 16,
-                                    keyboardType = single_line_text,
-                                    paddings = edgeInsets(start = 12, top = 10, end = 12, bottom = 10),
-                                    background = listOf(
-                                        solidBackground(color("#FFF2F2F7")).evaluate(color = Theme.INPUT_FIELD.divanExpression<Color>()),
-                                    ),
-                                    border = border(cornerRadius = 10),
-                                    enterKeyActions = listOf(searchAction),
-                                ).evaluate(textColor = Theme.PRIMARY_TEXT.divanExpression<Color>()),
+                                // Title — theme-aware
                                 text(
-                                    id = "city_search_button",
-                                    width = matchParentSize(),
-                                    text = localizer.getOrDefault("city.search.button", "Найти"),
-                                    fontSize = 16,
+                                    width = wrapContentSize(),
+                                    text = localizer.getOrDefault("settings.title", "Settings"),
+                                    fontSize = 28,
                                     fontWeight = bold,
+                                    margins = edgeInsets(bottom = 16),
+                                ).evaluate(textColor = Theme.PRIMARY_TEXT.divanExpression()),
+
+                                // ── City-search card ────────────────────────────────────────
+                                card(
+                                    header = localizer.getOrDefault("settings.city.label", "City"),
+                                    items = listOf(
+                                        input(
+                                            id = "city_search_input",
+                                            width = matchParentSize(),
+                                            height = fixedSize(44),
+                                            textVariable = "city_query",
+                                            hintText = localizer.getOrDefault(
+                                                "city.search.placeholder",
+                                                "Поиск города"
+                                            ),
+                                            hintColor = color("#FF8E8E93"),
+                                            fontSize = 16,
+                                            keyboardType = single_line_text,
+                                            paddings = edgeInsets(
+                                                start = 12,
+                                                top = 10,
+                                                end = 12,
+                                                bottom = 10
+                                            ),
+                                            background = listOf(
+                                                solidBackground().evaluate(color = Theme.INPUT_FIELD.divanExpression()),
+                                            ),
+                                            border = border(cornerRadius = 10),
+                                            enterKeyActions = listOf(searchAction),
+                                        ).evaluate(textColor = Theme.PRIMARY_TEXT.divanExpression()),
+                                        text(
+                                            id = "city_search_button",
+                                            width = matchParentSize(),
+                                            text = localizer.getOrDefault(
+                                                "city.search.button",
+                                                "Найти"
+                                            ),
+                                            fontSize = 16,
+                                            fontWeight = bold,
+                                            textAlignmentHorizontal = center,
+                                            textColor = color("#FFFFFFFF"),
+                                            background = listOf(solidBackground(color("#FF007AFF"))),
+                                            border = border(cornerRadius = 10),
+                                            paddings = edgeInsets(
+                                                start = 16,
+                                                top = 10,
+                                                end = 16,
+                                                bottom = 10
+                                            ),
+                                            margins = edgeInsets(top = 8),
+                                            action = searchAction,
+                                        ),
+                                        container(
+                                            id = "city_search_results",
+                                            orientation = vertical,
+                                            width = matchParentSize(),
+                                            margins = edgeInsets(top = 8),
+                                            items = emptyList(),
+                                        ),
+                                    ),
+                                ),
+
+                                // ── Theme section ──────────────────────────────────────────
+                                card(
+                                    header = localizer.getOrDefault(
+                                        "settings.theme.label",
+                                        "Theme"
+                                    ),
+                                    items = listOf(
+                                        container(
+                                            orientation = horizontal,
+                                            width = matchParentSize(),
+                                            items = listOf(
+                                                // reactive: theme_mode = "system"
+                                                text(
+                                                    id = "theme_btn_system",
+                                                    width = wrapContentSize(),
+                                                    text = localizer.getOrDefault(
+                                                        "settings.theme.system",
+                                                        "System"
+                                                    ),
+                                                    fontSize = 16,
+                                                    textAlignmentHorizontal = center,
+                                                    margins = edgeInsets(end = 8),
+                                                    paddings = edgeInsets(
+                                                        start = 16,
+                                                        top = 10,
+                                                        end = 16,
+                                                        bottom = 10
+                                                    ),
+                                                    background = listOf(
+                                                        solidBackground()
+                                                            .evaluate(
+                                                                color = (DivVars.THEME_MODE equalTo "system").ifElse(
+                                                                    "#FF007AFF",
+                                                                    "#FF3A3A3C"
+                                                                ).divanExpression()
+                                                            ),
+                                                    ),
+                                                    border = border(cornerRadius = 10),
+                                                    textColor = color("#FFFFFFFF"),
+                                                    action = action(
+                                                        logId = "set_theme_system",
+                                                        url = url("weather-app://set_theme?mode=system"),
+                                                    ),
+                                                ),
+                                                // reactive: theme_mode = "dark"
+                                                text(
+                                                    id = "theme_btn_dark",
+                                                    width = wrapContentSize(),
+                                                    text = localizer.getOrDefault(
+                                                        "settings.theme.dark",
+                                                        "Dark"
+                                                    ),
+                                                    fontSize = 16,
+                                                    textAlignmentHorizontal = center,
+                                                    margins = edgeInsets(end = 8),
+                                                    paddings = edgeInsets(
+                                                        start = 16,
+                                                        top = 10,
+                                                        end = 16,
+                                                        bottom = 10
+                                                    ),
+                                                    background = listOf(
+                                                        solidBackground()
+                                                            .evaluate(
+                                                                color = (DivVars.THEME_MODE equalTo "dark").ifElse(
+                                                                    "#FF007AFF",
+                                                                    "#FF3A3A3C"
+                                                                ).divanExpression()
+                                                            ),
+                                                    ),
+                                                    border = border(cornerRadius = 10),
+                                                    textColor = color("#FFFFFFFF"),
+                                                    action = action(
+                                                        logId = "set_theme_dark",
+                                                        url = url("weather-app://set_theme?mode=dark"),
+                                                    ),
+                                                ),
+                                                // reactive: theme_mode = "light"
+                                                text(
+                                                    id = "theme_btn_light",
+                                                    width = wrapContentSize(),
+                                                    text = localizer.getOrDefault(
+                                                        "settings.theme.light",
+                                                        "Light"
+                                                    ),
+                                                    fontSize = 16,
+                                                    textAlignmentHorizontal = center,
+                                                    paddings = edgeInsets(
+                                                        start = 16,
+                                                        top = 10,
+                                                        end = 16,
+                                                        bottom = 10
+                                                    ),
+                                                    background = listOf(
+                                                        solidBackground()
+                                                            .evaluate(
+                                                                color = (DivVars.THEME_MODE equalTo "light").ifElse(
+                                                                    "#FF007AFF",
+                                                                    "#FF3A3A3C"
+                                                                ).divanExpression()
+                                                            ),
+                                                    ),
+                                                    border = border(cornerRadius = 10),
+                                                    textColor = color("#FFFFFFFF"),
+                                                    action = action(
+                                                        logId = "set_theme_light",
+                                                        url = url("weather-app://set_theme?mode=light"),
+                                                    ),
+                                                ),
+                                            ),
+                                        ),
+                                    ),
+                                ),
+
+                                // ── Compact mode section ────────────────────────────────────
+                                card(
+                                    header = localizer.getOrDefault(
+                                        "settings.compact.label",
+                                        "Mode"
+                                    ),
+                                    items = listOf(
+                                        container(
+                                            orientation = horizontal,
+                                            width = matchParentSize(),
+                                            items = listOf(
+                                                // reactive: compact = true
+                                                text(
+                                                    id = "compact_btn_on",
+                                                    width = wrapContentSize(),
+                                                    text = localizer.getOrDefault(
+                                                        "settings.compact.on",
+                                                        "Compact"
+                                                    ),
+                                                    fontSize = 16,
+                                                    textAlignmentHorizontal = center,
+                                                    margins = edgeInsets(end = 8),
+                                                    paddings = edgeInsets(
+                                                        start = 16,
+                                                        top = 10,
+                                                        end = 16,
+                                                        bottom = 10
+                                                    ),
+                                                    background = listOf(
+                                                        solidBackground()
+                                                            .evaluate(
+                                                                color = DivVars.COMPACT.ifElse(
+                                                                    "#FF34C759",
+                                                                    "#FF3A3A3C"
+                                                                ).divanExpression()
+                                                            ),
+                                                    ),
+                                                    border = border(cornerRadius = 10),
+                                                    textColor = color("#FFFFFFFF"),
+                                                    action = action(
+                                                        logId = "set_compact_on",
+                                                        url = url("weather-app://set_compact?value=true"),
+                                                    ),
+                                                ),
+                                                // reactive: compact = false
+                                                text(
+                                                    id = "compact_btn_off",
+                                                    width = wrapContentSize(),
+                                                    text = localizer.getOrDefault(
+                                                        "settings.compact.off",
+                                                        "Normal"
+                                                    ),
+                                                    fontSize = 16,
+                                                    textAlignmentHorizontal = center,
+                                                    paddings = edgeInsets(
+                                                        start = 16,
+                                                        top = 10,
+                                                        end = 16,
+                                                        bottom = 10
+                                                    ),
+                                                    background = listOf(
+                                                        solidBackground()
+                                                            .evaluate(
+                                                                color = DivVars.COMPACT.ifElse(
+                                                                    "#FF3A3A3C",
+                                                                    "#FF34C759"
+                                                                ).divanExpression()
+                                                            ),
+                                                    ),
+                                                    border = border(cornerRadius = 10),
+                                                    textColor = color("#FFFFFFFF"),
+                                                    action = action(
+                                                        logId = "set_compact_off",
+                                                        url = url("weather-app://set_compact?value=false"),
+                                                    ),
+                                                ),
+                                            ),
+                                        ),
+                                    ),
+                                ),
+
+                                // ── Language section ────────────────────────────────────────
+                                card(
+                                    header = localizer.getOrDefault(
+                                        "settings.lang.label",
+                                        "Language"
+                                    ),
+                                    items = listOf(
+                                        container(
+                                            orientation = horizontal,
+                                            width = matchParentSize(),
+                                            items = listOf(
+                                                text(
+                                                    id = "lang_btn_ru",
+                                                    width = wrapContentSize(),
+                                                    text = localizer.getOrDefault(
+                                                        "settings.lang.ru",
+                                                        "Russian"
+                                                    ),
+                                                    fontSize = 16,
+                                                    textAlignmentHorizontal = center,
+                                                    margins = edgeInsets(end = 8),
+                                                    paddings = edgeInsets(
+                                                        start = 16,
+                                                        top = 10,
+                                                        end = 16,
+                                                        bottom = 10
+                                                    ),
+                                                    background = listOf(solidBackground(color("#FF5856D6"))),
+                                                    border = border(cornerRadius = 10),
+                                                    textColor = color("#FFFFFFFF"),
+                                                    action = action(
+                                                        logId = "set_lang_ru",
+                                                        url = url("weather-app://set_lang?value=ru"),
+                                                    ),
+                                                ),
+                                                text(
+                                                    id = "lang_btn_en",
+                                                    width = wrapContentSize(),
+                                                    text = localizer.getOrDefault(
+                                                        "settings.lang.en",
+                                                        "English"
+                                                    ),
+                                                    fontSize = 16,
+                                                    textAlignmentHorizontal = center,
+                                                    paddings = edgeInsets(
+                                                        start = 16,
+                                                        top = 10,
+                                                        end = 16,
+                                                        bottom = 10
+                                                    ),
+                                                    background = listOf(solidBackground(color("#FFFF2D55"))),
+                                                    border = border(cornerRadius = 10),
+                                                    textColor = color("#FFFFFFFF"),
+                                                    action = action(
+                                                        logId = "set_lang_en",
+                                                        url = url("weather-app://set_lang?value=en"),
+                                                    ),
+                                                ),
+                                            ),
+                                        ),
+                                    ),
+                                ),
+
+                                // ── Navigation ──────────────────────────────────────────────
+                                // Single button: every sub-screen is reached only from main, so a
+                                // separate "Back" action would be a redundant duplicate of "Home".
+                                text(
+                                    id = "nav_home",
+                                    width = wrapContentSize(),
+                                    text = localizer.getOrDefault("nav.main", "Home"),
+                                    fontSize = 16,
                                     textAlignmentHorizontal = center,
-                                    textColor = color("#FFFFFFFF"),
+                                    paddings = edgeInsets(
+                                        start = 16,
+                                        top = 10,
+                                        end = 16,
+                                        bottom = 10
+                                    ),
                                     background = listOf(solidBackground(color("#FF007AFF"))),
                                     border = border(cornerRadius = 10),
-                                    paddings = edgeInsets(start = 16, top = 10, end = 16, bottom = 10),
-                                    margins = edgeInsets(top = 8),
-                                    action = searchAction,
-                                ),
-                                container(
-                                    id = "city_search_results",
-                                    orientation = vertical,
-                                    width = matchParentSize(),
-                                    margins = edgeInsets(top = 8),
-                                    items = emptyList(),
-                                ),
-                            ),
-                        ),
-
-                        // ── Theme section ──────────────────────────────────────────
-                        card(
-                            header = localizer.getOrDefault("settings.theme.label", "Theme"),
-                            items = listOf(
-                                container(
-                                    orientation = horizontal,
-                                    width = matchParentSize(),
-                                    items = listOf(
-                                        // reactive: theme_mode = "system"
-                                        text(
-                                            id = "theme_btn_system",
-                                            width = wrapContentSize(),
-                                            text = localizer.getOrDefault("settings.theme.system", "System"),
-                                            fontSize = 16,
-                                            textAlignmentHorizontal = center,
-                                            margins = edgeInsets(end = 8),
-                                            paddings = edgeInsets(start = 16, top = 10, end = 16, bottom = 10),
-                                            background = listOf(
-                                                solidBackground(color("#FF3A3A3C"))
-                                                    .evaluate(color = (DivVars.THEME_MODE equalTo "system").ifElse("#FF007AFF", "#FF3A3A3C").divanExpression<Color>()),
-                                            ),
-                                            border = border(cornerRadius = 10),
-                                            textColor = color("#FFFFFFFF"),
-                                            action = action(
-                                                logId = "set_theme_system",
-                                                url = url("weather-app://set_theme?mode=system"),
-                                            ),
-                                        ),
-                                        // reactive: theme_mode = "dark"
-                                        text(
-                                            id = "theme_btn_dark",
-                                            width = wrapContentSize(),
-                                            text = localizer.getOrDefault("settings.theme.dark", "Dark"),
-                                            fontSize = 16,
-                                            textAlignmentHorizontal = center,
-                                            margins = edgeInsets(end = 8),
-                                            paddings = edgeInsets(start = 16, top = 10, end = 16, bottom = 10),
-                                            background = listOf(
-                                                solidBackground(color("#FF3A3A3C"))
-                                                    .evaluate(color = (DivVars.THEME_MODE equalTo "dark").ifElse("#FF007AFF", "#FF3A3A3C").divanExpression<Color>()),
-                                            ),
-                                            border = border(cornerRadius = 10),
-                                            textColor = color("#FFFFFFFF"),
-                                            action = action(
-                                                logId = "set_theme_dark",
-                                                url = url("weather-app://set_theme?mode=dark"),
-                                            ),
-                                        ),
-                                        // reactive: theme_mode = "light"
-                                        text(
-                                            id = "theme_btn_light",
-                                            width = wrapContentSize(),
-                                            text = localizer.getOrDefault("settings.theme.light", "Light"),
-                                            fontSize = 16,
-                                            textAlignmentHorizontal = center,
-                                            paddings = edgeInsets(start = 16, top = 10, end = 16, bottom = 10),
-                                            background = listOf(
-                                                solidBackground(color("#FF3A3A3C"))
-                                                    .evaluate(color = (DivVars.THEME_MODE equalTo "light").ifElse("#FF007AFF", "#FF3A3A3C").divanExpression<Color>()),
-                                            ),
-                                            border = border(cornerRadius = 10),
-                                            textColor = color("#FFFFFFFF"),
-                                            action = action(
-                                                logId = "set_theme_light",
-                                                url = url("weather-app://set_theme?mode=light"),
-                                            ),
-                                        ),
+                                    textColor = color("#FFFFFFFF"),
+                                    action = action(
+                                        logId = "nav_main",
+                                        url = url("weather-app://navigate?screen=main"),
                                     ),
                                 ),
-                            ),
-                        ),
-
-                        // ── Compact mode section ────────────────────────────────────
-                        card(
-                            header = localizer.getOrDefault("settings.compact.label", "Mode"),
-                            items = listOf(
-                                container(
-                                    orientation = horizontal,
-                                    width = matchParentSize(),
-                                    items = listOf(
-                                        // reactive: compact = true
-                                        text(
-                                            id = "compact_btn_on",
-                                            width = wrapContentSize(),
-                                            text = localizer.getOrDefault("settings.compact.on", "Compact"),
-                                            fontSize = 16,
-                                            textAlignmentHorizontal = center,
-                                            margins = edgeInsets(end = 8),
-                                            paddings = edgeInsets(start = 16, top = 10, end = 16, bottom = 10),
-                                            background = listOf(
-                                                solidBackground(color("#FF3A3A3C"))
-                                                    .evaluate(color = DivVars.COMPACT.ifElse("#FF34C759", "#FF3A3A3C").divanExpression<Color>()),
-                                            ),
-                                            border = border(cornerRadius = 10),
-                                            textColor = color("#FFFFFFFF"),
-                                            action = action(
-                                                logId = "set_compact_on",
-                                                url = url("weather-app://set_compact?value=true"),
-                                            ),
-                                        ),
-                                        // reactive: compact = false
-                                        text(
-                                            id = "compact_btn_off",
-                                            width = wrapContentSize(),
-                                            text = localizer.getOrDefault("settings.compact.off", "Normal"),
-                                            fontSize = 16,
-                                            textAlignmentHorizontal = center,
-                                            paddings = edgeInsets(start = 16, top = 10, end = 16, bottom = 10),
-                                            background = listOf(
-                                                solidBackground(color("#FF3A3A3C"))
-                                                    .evaluate(color = DivVars.COMPACT.ifElse("#FF3A3A3C", "#FF34C759").divanExpression<Color>()),
-                                            ),
-                                            border = border(cornerRadius = 10),
-                                            textColor = color("#FFFFFFFF"),
-                                            action = action(
-                                                logId = "set_compact_off",
-                                                url = url("weather-app://set_compact?value=false"),
-                                            ),
-                                        ),
-                                    ),
-                                ),
-                            ),
-                        ),
-
-                        // ── Language section ────────────────────────────────────────
-                        card(
-                            header = localizer.getOrDefault("settings.lang.label", "Language"),
-                            items = listOf(
-                                container(
-                                    orientation = horizontal,
-                                    width = matchParentSize(),
-                                    items = listOf(
-                                        text(
-                                            id = "lang_btn_ru",
-                                            width = wrapContentSize(),
-                                            text = localizer.getOrDefault("settings.lang.ru", "Russian"),
-                                            fontSize = 16,
-                                            textAlignmentHorizontal = center,
-                                            margins = edgeInsets(end = 8),
-                                            paddings = edgeInsets(start = 16, top = 10, end = 16, bottom = 10),
-                                            background = listOf(solidBackground(color("#FF5856D6"))),
-                                            border = border(cornerRadius = 10),
-                                            textColor = color("#FFFFFFFF"),
-                                            action = action(
-                                                logId = "set_lang_ru",
-                                                url = url("weather-app://set_lang?value=ru"),
-                                            ),
-                                        ),
-                                        text(
-                                            id = "lang_btn_en",
-                                            width = wrapContentSize(),
-                                            text = localizer.getOrDefault("settings.lang.en", "English"),
-                                            fontSize = 16,
-                                            textAlignmentHorizontal = center,
-                                            paddings = edgeInsets(start = 16, top = 10, end = 16, bottom = 10),
-                                            background = listOf(solidBackground(color("#FFFF2D55"))),
-                                            border = border(cornerRadius = 10),
-                                            textColor = color("#FFFFFFFF"),
-                                            action = action(
-                                                logId = "set_lang_en",
-                                                url = url("weather-app://set_lang?value=en"),
-                                            ),
-                                        ),
-                                    ),
-                                ),
-                            ),
-                        ),
-
-                        // ── Navigation ──────────────────────────────────────────────
-                        // Single button: every sub-screen is reached only from main, so a
-                        // separate "Back" action would be a redundant duplicate of "Home".
-                        text(
-                            id = "nav_home",
-                            width = wrapContentSize(),
-                            text = localizer.getOrDefault("nav.main", "Home"),
-                            fontSize = 16,
-                            textAlignmentHorizontal = center,
-                            paddings = edgeInsets(start = 16, top = 10, end = 16, bottom = 10),
-                            background = listOf(solidBackground(color("#FF007AFF"))),
-                            border = border(cornerRadius = 10),
-                            textColor = color("#FFFFFFFF"),
-                            action = action(
-                                logId = "nav_main",
-                                url = url("weather-app://navigate?screen=main"),
-                            ),
-                        ),
                             ),
                         ),
                     ),

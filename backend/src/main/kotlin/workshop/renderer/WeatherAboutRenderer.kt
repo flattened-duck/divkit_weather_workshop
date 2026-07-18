@@ -1,6 +1,5 @@
 package workshop.renderer
 
-import divkit.dsl.Color
 import divkit.dsl.Div
 import divkit.dsl.Divan
 import divkit.dsl.action
@@ -35,7 +34,7 @@ class WeatherAboutRenderer(
         width = matchParentSize(),
         margins = edgeInsets(bottom = 12),
         paddings = edgeInsets(start = 16, top = 16, end = 16, bottom = 16),
-        background = listOf(solidBackground(color("#FFFFFFFF")).evaluate(color = Theme.SURFACE.divanExpression<Color>())),
+        background = listOf(solidBackground().evaluate(color = Theme.SURFACE.divanExpression())),
         border = border(cornerRadius = 16),
         items = if (header != null) {
             listOf(
@@ -44,9 +43,8 @@ class WeatherAboutRenderer(
                     text = header,
                     fontSize = 17,
                     fontWeight = bold,
-                    textColor = color("#FF1C1C1E"),
                     margins = edgeInsets(bottom = 8),
-                ).evaluate(textColor = Theme.PRIMARY_TEXT.divanExpression<Color>()),
+                ).evaluate(textColor = Theme.PRIMARY_TEXT.divanExpression()),
             ) + items
         } else {
             items
@@ -61,7 +59,7 @@ class WeatherAboutRenderer(
                     orientation = vertical,
                     width = matchParentSize(),
                     height = matchParentSize(),
-                    background = listOf(solidBackground(color("#FFF2F2F7")).evaluate(color = Theme.SCREEN_BG.divanExpression<Color>())),
+                    background = listOf(solidBackground().evaluate(color = Theme.SCREEN_BG.divanExpression())),
                     items = listOf(
                         gallery(
                             id = "about_scroll",
@@ -69,8 +67,8 @@ class WeatherAboutRenderer(
                             width = matchParentSize(),
                             height = matchParentSize(),
                             paddings = edgeInsets(start = 16, end = 16).evaluate(
-                                top = (16 + DivVars.STATUS_INSET).divanExpression<Int>(),
-                                bottom = (16 + DivVars.NAV_INSET).divanExpression<Int>(),
+                                top = (16 + DivVars.STATUS_INSET).divanExpression(),
+                                bottom = (16 + DivVars.NAV_INSET).divanExpression(),
                             ),
                             items = listOf(
                         // Title — theme-aware
@@ -79,9 +77,8 @@ class WeatherAboutRenderer(
                             text = localizer.getOrDefault("about.title", "About"),
                             fontSize = 28,
                             fontWeight = bold,
-                            textColor = color("#FF1C1C1E"),
                             margins = edgeInsets(bottom = 16),
-                        ).evaluate(textColor = Theme.PRIMARY_TEXT.divanExpression<Color>()),
+                        ).evaluate(textColor = Theme.PRIMARY_TEXT.divanExpression()),
 
                         // ── Info card: app name + version ───────────────────────────
                         card(
@@ -92,9 +89,8 @@ class WeatherAboutRenderer(
                                     text = "DivKit Weather Workshop",
                                     fontSize = 20,
                                     fontWeight = bold,
-                                    textColor = color("#FF1C1C1E"),
                                     margins = edgeInsets(bottom = 4),
-                                ).evaluate(textColor = Theme.PRIMARY_TEXT.divanExpression<Color>()),
+                                ).evaluate(textColor = Theme.PRIMARY_TEXT.divanExpression()),
                                 text(
                                     width = wrapContentSize(),
                                     text = localizer.getOrDefault("about.version", "Version 1.0.0"),

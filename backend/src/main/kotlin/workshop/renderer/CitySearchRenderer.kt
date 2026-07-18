@@ -1,6 +1,5 @@
 package workshop.renderer
 
-import divkit.dsl.Color
 import divkit.dsl.Patch
 import divkit.dsl.action
 import divkit.dsl.border
@@ -45,7 +44,7 @@ class CitySearchRenderer(private val vm: CitySearchViewModel) {
                     margins = edgeInsets(top = 6),
                     border = border(cornerRadius = 10),
                     background = listOf(
-                        solidBackground(color("#FFFFFFFF")).evaluate(color = Theme.SURFACE.divanExpression<Color>()),
+                        solidBackground().evaluate(color = Theme.SURFACE.divanExpression()),
                     ),
                     action = action(
                         logId = "set_city",

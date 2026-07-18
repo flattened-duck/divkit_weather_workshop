@@ -1,7 +1,6 @@
 package workshop.renderer
 
 import divkit.dsl.Action
-import divkit.dsl.Color
 import divkit.dsl.Div
 import divkit.dsl.Divan
 import divkit.dsl.EdgeInsets
@@ -98,7 +97,7 @@ class WeatherMainRenderer(
                 orientation = vertical,
                 width = fixedSize(64),
                 paddings = edgeInsets(start = 8, top = 8, end = 8, bottom = 8),
-                background = listOf(solidBackground().evaluate(color = Theme.CARD_BG.divanExpression<Color>())),
+                background = listOf(solidBackground().evaluate(color = Theme.CARD_BG.divanExpression())),
                 border = border(cornerRadius = 16),
                 contentAlignmentHorizontal = center,
                 items = listOf(
@@ -106,7 +105,7 @@ class WeatherMainRenderer(
                         width = wrapContentSize(),
                         fontSize = 13,
                         textAlignmentHorizontal = center,
-                    ).evaluate(textColor = Theme.SECONDARY_TEXT.divanExpression<Color>()) + textRefs(text = hcTime),
+                    ).evaluate(textColor = Theme.SECONDARY_TEXT.divanExpression()) + textRefs(text = hcTime),
                     text(
                         width = wrapContentSize(),
                         fontSize = 22,
@@ -117,7 +116,7 @@ class WeatherMainRenderer(
                         fontSize = 16,
                         fontWeight = bold,
                         margins = edgeInsets(top = 4),
-                    ).evaluate(textColor = Theme.PRIMARY_TEXT.divanExpression<Color>()) + textRefs(text = hcTemp),
+                    ).evaluate(textColor = Theme.PRIMARY_TEXT.divanExpression()) + textRefs(text = hcTemp),
                 ),
             )
         }
@@ -130,11 +129,11 @@ class WeatherMainRenderer(
                 contentAlignmentVertical = center,
                 items = listOf(
                     text(width = fixedSize(44), fontSize = 16)
-                        .evaluate(textColor = Theme.PRIMARY_TEXT.divanExpression<Color>()) + textRefs(text = drWeekday),
+                        .evaluate(textColor = Theme.PRIMARY_TEXT.divanExpression()) + textRefs(text = drWeekday),
                     text(width = fixedSize(32), fontSize = 18, textAlignmentHorizontal = center)
                         + textRefs(text = drEmoji),
                     text(width = fixedSize(40), fontSize = 15, textAlignmentHorizontal = right)
-                        .evaluate(textColor = Theme.SECONDARY_TEXT.divanExpression<Color>()) + textRefs(text = drMin),
+                        .evaluate(textColor = Theme.SECONDARY_TEXT.divanExpression()) + textRefs(text = drMin),
                     // rangeBar inlined: outer track constant; inner fill's width+margins are refs
                     container(
                         orientation = overlap,
@@ -152,11 +151,11 @@ class WeatherMainRenderer(
                         ),
                     ),
                     text(width = fixedSize(40), fontSize = 15, fontWeight = bold)
-                        .evaluate(textColor = Theme.PRIMARY_TEXT.divanExpression<Color>()) + textRefs(text = drMax),
+                        .evaluate(textColor = Theme.PRIMARY_TEXT.divanExpression()) + textRefs(text = drMax),
                     // precip cell: ALWAYS present; text + visibility are refs (templates can't
                     // conditionally include children; visibility = gone reserves no space)
                     text(width = wrapContentSize(), fontSize = 12, margins = edgeInsets(start = 6))
-                        .evaluate(textColor = Theme.SECONDARY_TEXT.divanExpression<Color>())
+                        .evaluate(textColor = Theme.SECONDARY_TEXT.divanExpression())
                         + textRefs(text = drPrecip, visibility = drPrecipVis),
                 ),
             )
@@ -273,7 +272,7 @@ class WeatherMainRenderer(
             contentAlignmentVertical = center,
             background = listOf(solidBackground(color("#99000000"))),
             items = listOf(popupCard),
-        ).evaluate(visibility = visExpr.divanExpression<Visibility>())
+        ).evaluate(visibility = visExpr.divanExpression())
 
         // ---- Layer 0: full-screen weather background, theme-driven day/night photo swap ----
         // Selects the _day vs _night photo of the SAME condition base; no real time-of-day
@@ -285,14 +284,14 @@ class WeatherMainRenderer(
             width = matchParentSize(),
             height = matchParentSize(),
             scale = fill,
-        ).evaluate(imageUrl = bgUrlExpr.divanExpression<Url>())
+        ).evaluate(imageUrl = bgUrlExpr.divanExpression())
 
         // ---- Layer 1: pinned collapsible header + scroll body ----
         val fullHeader = container(
             orientation = vertical,
             width = matchParentSize(),
             paddings = edgeInsets(start = 20, end = 20, bottom = 8)
-                .evaluate(top = (24 + DivVars.STATUS_INSET).divanExpression<Int>()),
+                .evaluate(top = (24 + DivVars.STATUS_INSET).divanExpression()),
             transitionIn = fadeTransition(duration = 250),
             transitionOut = fadeTransition(duration = 250),
             items = listOf(
@@ -301,19 +300,19 @@ class WeatherMainRenderer(
                     width = wrapContentSize(),
                     fontSize = 20,
                     fontWeight = bold,
-                ).evaluate(textColor = Theme.PRIMARY_TEXT.divanExpression<Color>()),
+                ).evaluate(textColor = Theme.PRIMARY_TEXT.divanExpression()),
                 text(
                     text = vm.currentTempLabel,
                     width = wrapContentSize(),
                     fontSize = 72,
                     fontWeight = bold,
                     margins = edgeInsets(top = 4),
-                ).evaluate(textColor = Theme.PRIMARY_TEXT.divanExpression<Color>()),
+                ).evaluate(textColor = Theme.PRIMARY_TEXT.divanExpression()),
                 text(
                     text = vm.conditionLabel,
                     width = wrapContentSize(),
                     fontSize = 18,
-                ).evaluate(textColor = Theme.SECONDARY_TEXT.divanExpression<Color>()),
+                ).evaluate(textColor = Theme.SECONDARY_TEXT.divanExpression()),
                 container(
                     orientation = horizontal,
                     width = wrapContentSize(),
@@ -323,13 +322,13 @@ class WeatherMainRenderer(
                             text = vm.todayMaxArrowLabel,
                             width = wrapContentSize(),
                             fontSize = 16,
-                        ).evaluate(textColor = Theme.PRIMARY_TEXT.divanExpression<Color>()),
+                        ).evaluate(textColor = Theme.PRIMARY_TEXT.divanExpression()),
                         text(
                             text = vm.todayMinArrowLabel,
                             width = wrapContentSize(),
                             fontSize = 16,
                             margins = edgeInsets(start = 12),
-                        ).evaluate(textColor = Theme.SECONDARY_TEXT.divanExpression<Color>()),
+                        ).evaluate(textColor = Theme.SECONDARY_TEXT.divanExpression()),
                     ),
                 ),
             ),
@@ -339,8 +338,8 @@ class WeatherMainRenderer(
             orientation = vertical,
             width = matchParentSize(),
             paddings = edgeInsets(start = 20, end = 20, bottom = 8)
-                .evaluate(top = (12 + DivVars.STATUS_INSET).divanExpression<Int>()),
-            background = listOf(solidBackground().evaluate(color = Theme.HEADER_SCRIM.divanExpression<Color>())),
+                .evaluate(top = (12 + DivVars.STATUS_INSET).divanExpression()),
+            background = listOf(solidBackground().evaluate(color = Theme.HEADER_SCRIM.divanExpression())),
             transitionIn = fadeTransition(duration = 250),
             transitionOut = fadeTransition(duration = 250),
             items = listOf(
@@ -349,13 +348,13 @@ class WeatherMainRenderer(
                     width = wrapContentSize(),
                     fontSize = 17,
                     fontWeight = bold,
-                ).evaluate(textColor = Theme.PRIMARY_TEXT.divanExpression<Color>()),
+                ).evaluate(textColor = Theme.PRIMARY_TEXT.divanExpression()),
                 text(
                     text = vm.compactSummaryLabel,
                     width = wrapContentSize(),
                     fontSize = 15,
                     margins = edgeInsets(top = 2),
-                ).evaluate(textColor = Theme.SECONDARY_TEXT.divanExpression<Color>()),
+                ).evaluate(textColor = Theme.SECONDARY_TEXT.divanExpression()),
             ),
         )
 
@@ -410,7 +409,7 @@ class WeatherMainRenderer(
             orientation = vertical,
             width = matchParentSize(),
             margins = edgeInsets(start = 16, top = 16, end = 16),
-            background = listOf(solidBackground().evaluate(color = Theme.CARD_BG.divanExpression<Color>())),
+            background = listOf(solidBackground().evaluate(color = Theme.CARD_BG.divanExpression())),
             border = border(cornerRadius = 16),
             paddings = edgeInsets(start = 8, top = 8, end = 8, bottom = 8),
             items = vm.daily.map { d ->
@@ -537,8 +536,8 @@ class WeatherMainRenderer(
                 // Reserve the full-header height normally; in compact mode the header is forced
                 // compact, so reserve only the compact height (no gap). `compact` changes only on
                 // a settings toggle (never during scroll), so this reactive padding can't jitter.
-                top = (DivVars.COMPACT.ifElse(HEADER_COMPACT_DP, HEADER_EXPANDED_DP) + DivVars.STATUS_INSET).divanExpression<Int>(),
-                bottom = (96 + DivVars.NAV_INSET).divanExpression<Int>(),
+                top = (DivVars.COMPACT.ifElse(HEADER_COMPACT_DP, HEADER_EXPANDED_DP) + DivVars.STATUS_INSET).divanExpression(),
+                bottom = (96 + DivVars.NAV_INSET).divanExpression(),
             ),
             items = listOf(hourlyGallery, weeklyBlock, sunsetCard, detailsGrid),
         )
@@ -550,7 +549,7 @@ class WeatherMainRenderer(
             height = wrapContentSize(),
             alignmentHorizontal = right,
             alignmentVertical = bottom,
-            paddings = edgeInsets(end = 16).evaluate(bottom = (20 + DivVars.NAV_INSET).divanExpression<Int>()),
+            paddings = edgeInsets(end = 16).evaluate(bottom = (20 + DivVars.NAV_INSET).divanExpression()),
             items = listOf(
                 fab("⚙", action(logId = "fab_settings", url = url("weather-app://navigate?screen=settings")), id = "fab_settings"),
                 fab("ℹ", action(logId = "fab_about", url = url("weather-app://navigate?screen=about")), id = "fab_about"),
@@ -587,7 +586,7 @@ class WeatherMainRenderer(
         width = matchParentSize(weight = 1.0),
         margins = margins,
         paddings = edgeInsets(start = 14, top = 14, end = 14, bottom = 14),
-        background = listOf(solidBackground().evaluate(color = Theme.CARD_BG.divanExpression<Color>())),
+        background = listOf(solidBackground().evaluate(color = Theme.CARD_BG.divanExpression())),
         border = border(cornerRadius = 16),
         items = buildList {
             add(
@@ -595,7 +594,7 @@ class WeatherMainRenderer(
                     text = if (icon.isBlank()) title.uppercase() else "$icon  ${title.uppercase()}",
                     width = wrapContentSize(),
                     fontSize = 12,
-                ).evaluate(textColor = Theme.SECONDARY_TEXT.divanExpression<Color>()),
+                ).evaluate(textColor = Theme.SECONDARY_TEXT.divanExpression()),
             )
             if (bigValue.isNotEmpty()) {
                 add(
@@ -605,7 +604,7 @@ class WeatherMainRenderer(
                         fontSize = 28,
                         fontWeight = bold,
                         margins = edgeInsets(top = 8),
-                    ).evaluate(textColor = Theme.PRIMARY_TEXT.divanExpression<Color>()),
+                    ).evaluate(textColor = Theme.PRIMARY_TEXT.divanExpression()),
                 )
             }
             if (secondLine != null) {
@@ -615,7 +614,7 @@ class WeatherMainRenderer(
                         width = wrapContentSize(),
                         fontSize = 15,
                         margins = edgeInsets(top = 2),
-                    ).evaluate(textColor = Theme.SECONDARY_TEXT.divanExpression<Color>()),
+                    ).evaluate(textColor = Theme.SECONDARY_TEXT.divanExpression()),
                 )
             }
             if (body != null) {
@@ -636,7 +635,7 @@ class WeatherMainRenderer(
                         width = matchParentSize(),
                         fontSize = 13,
                         margins = edgeInsets(top = 8),
-                    ).evaluate(textColor = Theme.SECONDARY_TEXT.divanExpression<Color>()),
+                    ).evaluate(textColor = Theme.SECONDARY_TEXT.divanExpression()),
                 )
             }
         },
@@ -684,10 +683,10 @@ class WeatherMainRenderer(
         textAlignmentVertical = center,
         margins = edgeInsets(top = 6, bottom = 6),
         // Light theme: dark-gray FAB + light icon. Dark theme: light-gray FAB + dark icon.
-        background = listOf(solidBackground().evaluate(color = Theme.FAB_BG.divanExpression<Color>())),
+        background = listOf(solidBackground().evaluate(color = Theme.FAB_BG.divanExpression())),
         border = border(cornerRadius = 28),
         actions = if (act == null) null else listOf(act),
-    ).evaluate(textColor = Theme.FAB_ICON.divanExpression<Color>())
+    ).evaluate(textColor = Theme.FAB_ICON.divanExpression())
 
     private companion object {
         // "Install" widget popup re-show delay after tapping ×. Native set_stored_value TTL
