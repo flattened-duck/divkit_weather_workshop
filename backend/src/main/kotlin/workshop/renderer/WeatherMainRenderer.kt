@@ -311,9 +311,9 @@ class WeatherMainRenderer(
             items = vm.hourly.map { h ->
                 render(
                     MainTemplates.HourCell.template,
-                    MainTemplates.HourCell.time bind h.time,
-                    MainTemplates.HourCell.emoji bind h.emoji,
-                    MainTemplates.HourCell.temp bind h.tempLabel,
+                    MainTemplates.HourCell.timeRef bind h.time,
+                    MainTemplates.HourCell.emojiRef bind h.emoji,
+                    MainTemplates.HourCell.tempRef bind h.tempLabel,
                 )
             },
         )
@@ -329,14 +329,14 @@ class WeatherMainRenderer(
                 val vis: Visibility = if (d.precipLabel != null) visible else gone
                 render(
                     MainTemplates.DailyRow.template,
-                    MainTemplates.DailyRow.weekday bind d.weekday,
-                    MainTemplates.DailyRow.emoji bind d.emoji,
-                    MainTemplates.DailyRow.min bind d.minLabel,
-                    MainTemplates.DailyRow.barFill bind fixedSize(d.fillPx),
-                    MainTemplates.DailyRow.barOffset bind edgeInsets(start = d.offsetPx),
-                    MainTemplates.DailyRow.max bind d.maxLabel,
-                    MainTemplates.DailyRow.precip bind (d.precipLabel ?: ""),
-                    MainTemplates.DailyRow.precipVis bind vis,
+                    MainTemplates.DailyRow.weekdayRef bind d.weekday,
+                    MainTemplates.DailyRow.emojiRef bind d.emoji,
+                    MainTemplates.DailyRow.minRef bind d.minLabel,
+                    MainTemplates.DailyRow.barFillRef bind fixedSize(d.fillPx),
+                    MainTemplates.DailyRow.barOffsetRef bind edgeInsets(start = d.offsetPx),
+                    MainTemplates.DailyRow.maxRef bind d.maxLabel,
+                    MainTemplates.DailyRow.precipRef bind (d.precipLabel ?: ""),
+                    MainTemplates.DailyRow.precipVisRef bind vis,
                 )
             },
         )
