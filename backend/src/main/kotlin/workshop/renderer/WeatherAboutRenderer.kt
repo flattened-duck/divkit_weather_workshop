@@ -98,7 +98,7 @@ class WeatherAboutRenderer(
                                                 "Version 1.0.0"
                                             ),
                                             fontSize = 13,
-                                            textColor = color("#FF8E8E93"),
+                                            textColor = color(Colors.GRAY),
                                         ),
                                     ),
                                 ),
@@ -109,7 +109,7 @@ class WeatherAboutRenderer(
                                     text = localizer.getOrDefault("about.repo", "GitHub"),
                                     fontSize = 16,
                                     fontWeight = bold,
-                                    textColor = color("#FFFFFFFF"),
+                                    textColor = color(Colors.WHITE),
                                     textAlignmentHorizontal = center,
                                     margins = edgeInsets(bottom = 24),
                                     paddings = edgeInsets(
@@ -118,7 +118,7 @@ class WeatherAboutRenderer(
                                         end = 16,
                                         bottom = 10
                                     ),
-                                    background = listOf(solidBackground(color("#FF007AFF"))),
+                                    background = listOf(solidBackground(color(Colors.BLUE))),
                                     border = border(cornerRadius = 10),
                                     action = action(
                                         logId = "open_github",
@@ -141,9 +141,9 @@ class WeatherAboutRenderer(
                                         end = 16,
                                         bottom = 10
                                     ),
-                                    background = listOf(solidBackground(color("#FF007AFF"))),
+                                    background = listOf(solidBackground(color(Colors.BLUE))),
                                     border = border(cornerRadius = 10),
-                                    textColor = color("#FFFFFFFF"),
+                                    textColor = color(Colors.WHITE),
                                     action = action(
                                         logId = "nav_main",
                                         url = url("weather-app://navigate?screen=main"),

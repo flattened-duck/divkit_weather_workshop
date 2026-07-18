@@ -143,12 +143,12 @@ class WeatherMainRenderer(
                         height = fixedSize(6),
                         margins = edgeInsets(start = 8, end = 8),
                         border = border(cornerRadius = 3),
-                        background = listOf(solidBackground(color("#33FFFFFF"))),
+                        background = listOf(solidBackground(color(Colors.TRACK_WHITE))),
                         items = listOf(
                             container(
                                 height = fixedSize(6),
                                 border = border(cornerRadius = 3),
-                                background = listOf(solidBackground(color("#FFFF9500"))),
+                                background = listOf(solidBackground(color(Colors.ORANGE))),
                             ) + containerRefs(width = drBarFill, margins = drBarOffset),
                         ),
                     ),
@@ -214,7 +214,7 @@ class WeatherMainRenderer(
             text = "×",
             width = wrapContentSize(),
             fontSize = 24,
-            textColor = color("#FF8E8E93"),
+            textColor = color(Colors.GRAY),
             alignmentHorizontal = right,
             alignmentVertical = top,
             actions = listOf(actCloseDelay, actCloseDismiss),
@@ -234,7 +234,7 @@ class WeatherMainRenderer(
             width = matchParentSize(),
             fontSize = 18,
             fontWeight = bold,
-            textColor = color("#FF1C1C1E"),
+            textColor = color(Colors.NEAR_BLACK),
         )
         val installBtn = text(
             id = "popup_install",
@@ -242,9 +242,9 @@ class WeatherMainRenderer(
             width = matchParentSize(),
             fontSize = 16,
             fontWeight = bold,
-            textColor = color("#FFFFFFFF"),
+            textColor = color(Colors.WHITE),
             textAlignmentHorizontal = center,
-            background = listOf(solidBackground(color("#FF007AFF"))),
+            background = listOf(solidBackground(color(Colors.BLUE))),
             border = border(cornerRadius = 10),
             paddings = edgeInsets(start = 16, top = 12, end = 16, bottom = 12),
             margins = edgeInsets(top = 20),
@@ -261,7 +261,7 @@ class WeatherMainRenderer(
         val popupCard = container(
             orientation = overlap,
             width = fixedSize(300),
-            background = listOf(solidBackground(color("#FFFFFFFF"))),
+            background = listOf(solidBackground(color(Colors.WHITE))),
             border = border(cornerRadius = 16),
             paddings = edgeInsets(start = 20, top = 16, end = 20, bottom = 20),
             items = listOf(popupContent, closeX),
@@ -272,7 +272,7 @@ class WeatherMainRenderer(
             height = matchParentSize(),
             contentAlignmentHorizontal = center,
             contentAlignmentVertical = center,
-            background = listOf(solidBackground(color("#99000000"))),
+            background = listOf(solidBackground(color(Colors.SCRIM_BLACK))),
             items = listOf(popupCard),
         ).evaluate(visibility = visExpr.divanExpression())
 
@@ -436,7 +436,7 @@ class WeatherMainRenderer(
             customProps = mapOf(
                 "sunrise" to vm.sunrise,
                 "sunset" to vm.sunset,
-                "track_color" to "#FF9E9EA3",
+                "track_color" to Colors.GRAY_LIGHT,
             ),
             width = matchParentSize(),
             height = fixedSize(120),
@@ -688,7 +688,7 @@ class WeatherMainRenderer(
                     height = fixedSize(16),
                     margins = edgeInsets(start = offset),
                     border = border(cornerRadius = 2),
-                    background = listOf(solidBackground(color("#FFFFFFFF"))),
+                    background = listOf(solidBackground(color(Colors.WHITE))),
                 ),
             ),
         )
@@ -739,7 +739,7 @@ class WeatherMainRenderer(
 
         const val SCALE_W = 120
         const val MARKER_W = 4
-        val UV_SCALE_HEX = listOf("#FF34C759", "#FFFFCC00", "#FFFF9500", "#FFFF3B30", "#FFAF52DE")
-        val PRESS_SCALE_HEX = listOf("#FF5AC8FA", "#FF34C759", "#FFFF9500")
+        val UV_SCALE_HEX = listOf(Colors.GREEN, Colors.YELLOW, Colors.ORANGE, Colors.RED, Colors.PURPLE)
+        val PRESS_SCALE_HEX = listOf(Colors.SKY_BLUE, Colors.GREEN, Colors.ORANGE)
     }
 }

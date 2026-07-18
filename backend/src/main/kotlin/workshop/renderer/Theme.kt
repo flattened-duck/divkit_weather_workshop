@@ -12,20 +12,20 @@ import divkit.dsl.expression.ifElse
  */
 object Theme {
     val PRIMARY_TEXT: Expression<String> =
-        (DivVars.THEME equalTo "dark").ifElse("#FFFFFFFF", "#FF1C1C1E")
+        (DivVars.THEME equalTo "dark").ifElse(Colors.WHITE, Colors.NEAR_BLACK)
     val SECONDARY_TEXT: Expression<String> =
-        (DivVars.THEME equalTo "dark").ifElse("#FF9E9EA3", "#FF6E6E73")
+        (DivVars.THEME equalTo "dark").ifElse(Colors.GRAY_LIGHT, Colors.GRAY_DARK)
     val CARD_BG: Expression<String> =
-        (DivVars.THEME equalTo "dark").ifElse("#CC1C1C1E", "#CCFFFFFF")
-    val FAB_BG: Expression<String> = (DivVars.THEME equalTo "dark").ifElse("#E6D8D8DD", "#E63A3A3C")
+        (DivVars.THEME equalTo "dark").ifElse(Colors.CARD_DARK, Colors.CARD_LIGHT)
+    val FAB_BG: Expression<String> = (DivVars.THEME equalTo "dark").ifElse(Colors.FAB_DARK, Colors.FAB_LIGHT)
     val FAB_ICON: Expression<String> =
-        (DivVars.THEME equalTo "dark").ifElse("#FF1C1C1E", "#FFFFFFFF")
+        (DivVars.THEME equalTo "dark").ifElse(Colors.NEAR_BLACK, Colors.WHITE)
     val HEADER_SCRIM: Expression<String> =
-        (DivVars.THEME equalTo "dark").ifElse("#99000000", "#99FFFFFF")
+        (DivVars.THEME equalTo "dark").ifElse(Colors.SCRIM_BLACK, Colors.SCRIM_WHITE)
     val SCREEN_BG: Expression<String> =
-        (DivVars.THEME equalTo "dark").ifElse("#FF1C1C1E", "#FFF2F2F7")
+        (DivVars.THEME equalTo "dark").ifElse(Colors.NEAR_BLACK, Colors.LIGHT_SURFACE)
     val SURFACE: Expression<String> =
-        (DivVars.THEME equalTo "dark").ifElse("#FF2C2C2E", "#FFFFFFFF")
+        (DivVars.THEME equalTo "dark").ifElse(Colors.DARK_SURFACE, Colors.WHITE)
     val INPUT_FIELD: Expression<String> =
-        (DivVars.THEME equalTo "dark").ifElse("#FF3A3A3C", "#FFF2F2F7")
+        (DivVars.THEME equalTo "dark").ifElse(Colors.CONTROL_INACTIVE, Colors.LIGHT_SURFACE)
 }

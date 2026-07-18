@@ -108,7 +108,7 @@ class WeatherSettingsRenderer(
                                                 "city.search.placeholder",
                                                 "Поиск города"
                                             ),
-                                            hintColor = color("#FF8E8E93"),
+                                            hintColor = color(Colors.GRAY),
                                             fontSize = 16,
                                             keyboardType = single_line_text,
                                             paddings = edgeInsets(
@@ -133,8 +133,8 @@ class WeatherSettingsRenderer(
                                             fontSize = 16,
                                             fontWeight = bold,
                                             textAlignmentHorizontal = center,
-                                            textColor = color("#FFFFFFFF"),
-                                            background = listOf(solidBackground(color("#FF007AFF"))),
+                                            textColor = color(Colors.WHITE),
+                                            background = listOf(solidBackground(color(Colors.BLUE))),
                                             border = border(cornerRadius = 10),
                                             paddings = edgeInsets(
                                                 start = 16,
@@ -187,13 +187,13 @@ class WeatherSettingsRenderer(
                                                         solidBackground()
                                                             .evaluate(
                                                                 color = (DivVars.THEME_MODE equalTo "system").ifElse(
-                                                                    "#FF007AFF",
-                                                                    "#FF3A3A3C"
+                                                                    Colors.BLUE,
+                                                                    Colors.CONTROL_INACTIVE
                                                                 ).divanExpression()
                                                             ),
                                                     ),
                                                     border = border(cornerRadius = 10),
-                                                    textColor = color("#FFFFFFFF"),
+                                                    textColor = color(Colors.WHITE),
                                                     action = action(
                                                         logId = "set_theme_system",
                                                         url = url("weather-app://set_theme?mode=system"),
@@ -220,13 +220,13 @@ class WeatherSettingsRenderer(
                                                         solidBackground()
                                                             .evaluate(
                                                                 color = (DivVars.THEME_MODE equalTo "dark").ifElse(
-                                                                    "#FF007AFF",
-                                                                    "#FF3A3A3C"
+                                                                    Colors.BLUE,
+                                                                    Colors.CONTROL_INACTIVE
                                                                 ).divanExpression()
                                                             ),
                                                     ),
                                                     border = border(cornerRadius = 10),
-                                                    textColor = color("#FFFFFFFF"),
+                                                    textColor = color(Colors.WHITE),
                                                     action = action(
                                                         logId = "set_theme_dark",
                                                         url = url("weather-app://set_theme?mode=dark"),
@@ -252,13 +252,13 @@ class WeatherSettingsRenderer(
                                                         solidBackground()
                                                             .evaluate(
                                                                 color = (DivVars.THEME_MODE equalTo "light").ifElse(
-                                                                    "#FF007AFF",
-                                                                    "#FF3A3A3C"
+                                                                    Colors.BLUE,
+                                                                    Colors.CONTROL_INACTIVE
                                                                 ).divanExpression()
                                                             ),
                                                     ),
                                                     border = border(cornerRadius = 10),
-                                                    textColor = color("#FFFFFFFF"),
+                                                    textColor = color(Colors.WHITE),
                                                     action = action(
                                                         logId = "set_theme_light",
                                                         url = url("weather-app://set_theme?mode=light"),
@@ -301,13 +301,13 @@ class WeatherSettingsRenderer(
                                                         solidBackground()
                                                             .evaluate(
                                                                 color = DivVars.COMPACT.ifElse(
-                                                                    "#FF34C759",
-                                                                    "#FF3A3A3C"
+                                                                    Colors.GREEN,
+                                                                    Colors.CONTROL_INACTIVE
                                                                 ).divanExpression()
                                                             ),
                                                     ),
                                                     border = border(cornerRadius = 10),
-                                                    textColor = color("#FFFFFFFF"),
+                                                    textColor = color(Colors.WHITE),
                                                     action = action(
                                                         logId = "set_compact_on",
                                                         url = url("weather-app://set_compact?value=true"),
@@ -333,13 +333,13 @@ class WeatherSettingsRenderer(
                                                         solidBackground()
                                                             .evaluate(
                                                                 color = DivVars.COMPACT.ifElse(
-                                                                    "#FF3A3A3C",
-                                                                    "#FF34C759"
+                                                                    Colors.CONTROL_INACTIVE,
+                                                                    Colors.GREEN
                                                                 ).divanExpression()
                                                             ),
                                                     ),
                                                     border = border(cornerRadius = 10),
-                                                    textColor = color("#FFFFFFFF"),
+                                                    textColor = color(Colors.WHITE),
                                                     action = action(
                                                         logId = "set_compact_off",
                                                         url = url("weather-app://set_compact?value=false"),
@@ -377,9 +377,9 @@ class WeatherSettingsRenderer(
                                                         end = 16,
                                                         bottom = 10
                                                     ),
-                                                    background = listOf(solidBackground(color("#FF5856D6"))),
+                                                    background = listOf(solidBackground(color(Colors.INDIGO))),
                                                     border = border(cornerRadius = 10),
-                                                    textColor = color("#FFFFFFFF"),
+                                                    textColor = color(Colors.WHITE),
                                                     action = action(
                                                         logId = "set_lang_ru",
                                                         url = url("weather-app://set_lang?value=ru"),
@@ -400,9 +400,9 @@ class WeatherSettingsRenderer(
                                                         end = 16,
                                                         bottom = 10
                                                     ),
-                                                    background = listOf(solidBackground(color("#FFFF2D55"))),
+                                                    background = listOf(solidBackground(color(Colors.PINK))),
                                                     border = border(cornerRadius = 10),
-                                                    textColor = color("#FFFFFFFF"),
+                                                    textColor = color(Colors.WHITE),
                                                     action = action(
                                                         logId = "set_lang_en",
                                                         url = url("weather-app://set_lang?value=en"),
@@ -428,9 +428,9 @@ class WeatherSettingsRenderer(
                                         end = 16,
                                         bottom = 10
                                     ),
-                                    background = listOf(solidBackground(color("#FF007AFF"))),
+                                    background = listOf(solidBackground(color(Colors.BLUE))),
                                     border = border(cornerRadius = 10),
-                                    textColor = color("#FFFFFFFF"),
+                                    textColor = color(Colors.WHITE),
                                     action = action(
                                         logId = "nav_main",
                                         url = url("weather-app://navigate?screen=main"),
