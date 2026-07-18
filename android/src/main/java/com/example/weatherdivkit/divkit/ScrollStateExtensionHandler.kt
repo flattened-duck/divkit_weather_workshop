@@ -54,8 +54,9 @@ class ScrollStateExtensionHandler(
             } else {
                 !rv.canScrollVertically(-1)
             }
-            val forced = (variableController.get(GlobalVarNames.COMPACT) as? Variable.BooleanVariable)
-                ?.getValue() as? Boolean ?: false
+            val forced =
+                (variableController.get(GlobalVarNames.COMPACT) as? Variable.BooleanVariable)
+                    ?.getValue() as? Boolean ?: false
             // Hysteresis without an offset-based expand threshold: collapse when scrolled past
             // collapsePx (offset is clean while the header is still expanded); once collapsed, stay
             // collapsed until we're back at the very top (canScrollVertically(-1)==false). This
@@ -105,6 +106,7 @@ class ScrollStateExtensionHandler(
 
     companion object {
         const val EXTENSION_ID = "scroll_state"
+
         // Collapse when scrolled past COLLAPSE_DP; expand only when back at the very top
         // (canScrollVertically(-1)==false), which is immune to the reactive top-padding shift.
         private const val COLLAPSE_DP = 24

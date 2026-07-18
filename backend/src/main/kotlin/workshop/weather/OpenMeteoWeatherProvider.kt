@@ -72,7 +72,11 @@ class OpenMeteoWeatherProvider(private val client: ForecastClient) : WeatherProv
         val hourly = (0 until hourlyCount).map { k ->
             val i = currentIdx + k
             HourlyPoint.newBuilder()
-                .setTime(if (k == 0) localizer.getOrDefault("hourly.now", "now") else hhmm(hourlyTimeArray.get(i).asText()))
+                .setTime(
+                    if (k == 0) localizer.getOrDefault("hourly.now", "now") else hhmm(
+                        hourlyTimeArray.get(i).asText()
+                    )
+                )
                 .setTempC(round(hourlyTemps.get(i).asDouble()))
                 .setCondition(wmoToCondition(hourlyCodes.get(i).asInt()))
                 .build()

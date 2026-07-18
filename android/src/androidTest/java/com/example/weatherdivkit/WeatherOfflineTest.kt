@@ -23,10 +23,14 @@ class WeatherOfflineTest {
     private var scenario: ActivityScenario<MainActivity>? = null
 
     @Before
-    fun setUp() { DocumentLoader.baseUrl = "http://127.0.0.1:1" } // dead address -> forces loadFromAssets()
+    fun setUp() {
+        DocumentLoader.baseUrl = "http://127.0.0.1:1"
+    } // dead address -> forces loadFromAssets()
 
     @After
-    fun tearDown() { scenario?.close(); DocumentLoader.baseUrl = DocumentLoader.DEFAULT_BASE_URL }
+    fun tearDown() {
+        scenario?.close(); DocumentLoader.baseUrl = DocumentLoader.DEFAULT_BASE_URL
+    }
 
     @Test
     fun offline_fallsBackToAssets() {

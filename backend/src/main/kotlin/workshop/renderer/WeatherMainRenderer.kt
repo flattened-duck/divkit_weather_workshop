@@ -131,9 +131,11 @@ class WeatherMainRenderer(
                     text(width = fixedSize(44), fontSize = 16)
                         .evaluate(textColor = Theme.PRIMARY_TEXT.divanExpression()) + textRefs(text = drWeekday),
                     text(width = fixedSize(32), fontSize = 18, textAlignmentHorizontal = center)
-                        + textRefs(text = drEmoji),
+                            + textRefs(text = drEmoji),
                     text(width = fixedSize(40), fontSize = 15, textAlignmentHorizontal = right)
-                        .evaluate(textColor = Theme.SECONDARY_TEXT.divanExpression()) + textRefs(text = drMin),
+                        .evaluate(textColor = Theme.SECONDARY_TEXT.divanExpression()) + textRefs(
+                        text = drMin
+                    ),
                     // rangeBar inlined: outer track constant; inner fill's width+margins are refs
                     container(
                         orientation = overlap,
@@ -156,7 +158,7 @@ class WeatherMainRenderer(
                     // conditionally include children; visibility = gone reserves no space)
                     text(width = wrapContentSize(), fontSize = 12, margins = edgeInsets(start = 6))
                         .evaluate(textColor = Theme.SECONDARY_TEXT.divanExpression())
-                        + textRefs(text = drPrecip, visibility = drPrecipVis),
+                            + textRefs(text = drPrecip, visibility = drPrecipVis),
                 ),
             )
         }
@@ -167,10 +169,10 @@ class WeatherMainRenderer(
         // div-evaluable bytecode + runtime), so the "3-day delay" uses the native
         // set_stored_value `lifetime` (seconds) TTL/expiration instead of datetime arithmetic.
         val visExpr = (
-            !DivVars.POPUP_DISMISSED and
-                !getStoredBooleanValue("widget_set_up".string(), false.boolean()) and
-                !getStoredBooleanValue("widget_popup_delayed".string(), false.boolean())
-        ).ifElse("visible", "gone")
+                !DivVars.POPUP_DISMISSED and
+                        !getStoredBooleanValue("widget_set_up".string(), false.boolean()) and
+                        !getStoredBooleanValue("widget_popup_delayed".string(), false.boolean())
+                ).ifElse("visible", "gone")
 
         val actInstallSet = action(
             logId = "popup_install",
@@ -522,7 +524,12 @@ class WeatherMainRenderer(
         val scrollBody = gallery(
             id = "main_scroll",
             orientation = vertical,
-            extensions = listOf(extension(id = "scroll_state", params = mapOf("orientation" to "vertical"))),
+            extensions = listOf(
+                extension(
+                    id = "scroll_state",
+                    params = mapOf("orientation" to "vertical")
+                )
+            ),
             width = matchParentSize(),
             height = matchParentSize(),
             // Constant top padding = full-header height. Content always starts under the FULL
@@ -536,7 +543,10 @@ class WeatherMainRenderer(
                 // Reserve the full-header height normally; in compact mode the header is forced
                 // compact, so reserve only the compact height (no gap). `compact` changes only on
                 // a settings toggle (never during scroll), so this reactive padding can't jitter.
-                top = (DivVars.COMPACT.ifElse(HEADER_COMPACT_DP, HEADER_EXPANDED_DP) + DivVars.STATUS_INSET).divanExpression(),
+                top = (DivVars.COMPACT.ifElse(
+                    HEADER_COMPACT_DP,
+                    HEADER_EXPANDED_DP
+                ) + DivVars.STATUS_INSET).divanExpression(),
                 bottom = (96 + DivVars.NAV_INSET).divanExpression(),
             ),
             items = listOf(hourlyGallery, weeklyBlock, sunsetCard, detailsGrid),
@@ -551,8 +561,19 @@ class WeatherMainRenderer(
             alignmentVertical = bottom,
             paddings = edgeInsets(end = 16).evaluate(bottom = (20 + DivVars.NAV_INSET).divanExpression()),
             items = listOf(
-                fab("⚙", action(logId = "fab_settings", url = url("weather-app://navigate?screen=settings")), id = "fab_settings"),
-                fab("ℹ", action(logId = "fab_about", url = url("weather-app://navigate?screen=about")), id = "fab_about"),
+                fab(
+                    "⚙",
+                    action(
+                        logId = "fab_settings",
+                        url = url("weather-app://navigate?screen=settings")
+                    ),
+                    id = "fab_settings"
+                ),
+                fab(
+                    "ℹ",
+                    action(logId = "fab_about", url = url("weather-app://navigate?screen=about")),
+                    id = "fab_about"
+                ),
             ),
         )
 

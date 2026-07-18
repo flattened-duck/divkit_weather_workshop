@@ -12,7 +12,11 @@ class CitySearchAdapter(private val localizer: Localizer) {
         rows = hits.map { hit ->
             CityRowVm(
                 label = hit.name,
-                actionUrl = "weather-app://set_city?lat=${hit.lat}&lon=${hit.lon}&name=${urlEncode(hit.name)}",
+                actionUrl = "weather-app://set_city?lat=${hit.lat}&lon=${hit.lon}&name=${
+                    urlEncode(
+                        hit.name
+                    )
+                }",
             )
         },
         emptyLabel = localizer.getOrDefault("city.search.empty", "Ничего не найдено"),

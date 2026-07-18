@@ -22,7 +22,11 @@ class GoldenSnapshotTest {
             f.writeText(actual)
             return
         }
-        assertEquals(f.readText(), actual, "Golden snapshot drift for $name — refactor changed shipped JSON")
+        assertEquals(
+            f.readText(),
+            actual,
+            "Golden snapshot drift for $name — refactor changed shipped JSON"
+        )
     }
 
     @Test

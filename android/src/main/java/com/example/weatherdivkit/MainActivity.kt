@@ -69,22 +69,38 @@ class MainActivity : AppCompatActivity() {
         val compact = prefs.compact
         val effective = ThemeResolver.resolveEffective(themeMode, isSystemDark())
 
-        globals = GlobalVariables(themeMode = themeMode, effectiveTheme = effective, compact = compact)
+        globals =
+            GlobalVariables(themeMode = themeMode, effectiveTheme = effective, compact = compact)
 
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             val d = resources.displayMetrics.density
-            globals.setInsets((bars.top / d).roundToInt().toLong(), (bars.bottom / d).roundToInt().toLong())
+            globals.setInsets(
+                (bars.top / d).roundToInt().toLong(),
+                (bars.bottom / d).roundToInt().toLong()
+            )
             insets
         }
         ViewCompat.requestApplyInsets(binding.root)
 
-        navigator = ScreenNavigator(availableScreens = { screens.keys }, render = ::renderDiv, onExit = ::finish)
+        navigator = ScreenNavigator(
+            availableScreens = { screens.keys },
+            render = ::renderDiv,
+            onExit = ::finish
+        )
 
         divConfiguration = DivConfiguration.Builder(CoilDivImageLoader(this, HttpClients.noProxy))
-            .actionHandler(WeatherDivActionHandler(
-                navigator::showScreen, navigator::goBack, ::onSetLang, ::onSetTheme, ::onSetCompact,
-                ::onCitySearch, ::onSetCity))
+            .actionHandler(
+                WeatherDivActionHandler(
+                    navigator::showScreen,
+                    navigator::goBack,
+                    ::onSetLang,
+                    ::onSetTheme,
+                    ::onSetCompact,
+                    ::onCitySearch,
+                    ::onSetCity
+                )
+            )
             .divVariableController(globals.controller)
             .divCustomContainerViewAdapter(SunPhaseCustomViewAdapter())
             .extension(ScrollStateExtensionHandler(globals.controller))
@@ -241,13 +257,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun isSystemDark(): Boolean =
         (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
-            Configuration.UI_MODE_NIGHT_YES
+                Configuration.UI_MODE_NIGHT_YES
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
         if (globals.currentThemeMode() == ThemeMode.SYSTEM) {
             val dark = (newConfig.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
-                Configuration.UI_MODE_NIGHT_YES
+                    Configuration.UI_MODE_NIGHT_YES
             globals.setTheme(if (dark) ThemeMode.DARK else ThemeMode.LIGHT)
             StatusBarTheming.apply(window, if (dark) ThemeMode.DARK else ThemeMode.LIGHT)
         }

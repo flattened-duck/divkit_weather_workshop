@@ -30,7 +30,9 @@ class WeatherUiTest {
         DocumentLoader.baseUrl = DocumentLoader.DEFAULT_BASE_URL
     }
 
-    private fun launch() { scenario = ActivityScenario.launch(MainActivity::class.java) }
+    private fun launch() {
+        scenario = ActivityScenario.launch(MainActivity::class.java)
+    }
 
     @Test
     fun mainScreen_coreStructure_rendersFromLiveServer() {

@@ -23,7 +23,10 @@ class ApplicationSmokeTest {
         assertTrue(body.contains("\"main\""), "Must contain 'main' screen")
         assertTrue(body.contains("\"settings\""), "Must contain 'settings' screen")
         assertTrue(body.contains("\"about\""), "Must contain 'about' screen")
-        assertTrue(body.contains("weather-app://set_theme?mode="), "Must contain reactive set_theme action")
+        assertTrue(
+            body.contains("weather-app://set_theme?mode="),
+            "Must contain reactive set_theme action"
+        )
     }
 
     @Test
@@ -59,8 +62,14 @@ class ApplicationSmokeTest {
         application { module() }
         val resp = client.get("/document?lang=ru")
         val body = resp.bodyAsText()
-        assertTrue(body.contains("@{(theme == 'dark')"), "Must contain reactive theme variable expression")
-        assertFalse(body.contains("getStoredStringValue"), "Must NOT contain non-reactive getStoredStringValue")
+        assertTrue(
+            body.contains("@{(theme == 'dark')"),
+            "Must contain reactive theme variable expression"
+        )
+        assertFalse(
+            body.contains("getStoredStringValue"),
+            "Must NOT contain non-reactive getStoredStringValue"
+        )
     }
 
     @Test
@@ -78,14 +87,29 @@ class ApplicationSmokeTest {
         assertTrue(body.contains("\"overlap\""), "overlap container must be present")
         assertTrue(body.contains("\"set_stored_value\""), "set_stored_value action must be present")
         assertTrue(body.contains("widget_set_up"), "widget_set_up stored value must be present")
-        assertTrue(body.contains("widget_popup_delayed"), "widget_popup_delayed stored value must be present")
+        assertTrue(
+            body.contains("widget_popup_delayed"),
+            "widget_popup_delayed stored value must be present"
+        )
         assertTrue(body.contains("popup_dismissed"), "popup_dismissed variable must be present")
-        assertTrue(body.contains("getStoredBooleanValue('widget_set_up'"), "read expression must be present")
-        assertTrue(body.contains("getStoredBooleanValue('widget_popup_delayed'"), "delayed-flag read expression must be present")
+        assertTrue(
+            body.contains("getStoredBooleanValue('widget_set_up'"),
+            "read expression must be present"
+        )
+        assertTrue(
+            body.contains("getStoredBooleanValue('widget_popup_delayed'"),
+            "delayed-flag read expression must be present"
+        )
         // getTimestamp/nowLocal arithmetic doesn't exist as a builtin in open DivKit 32.6.0;
         // the 3-day delay is a native set_stored_value TTL (seconds) instead.
-        assertTrue(body.contains("\"lifetime\":259200"), "3-day (seconds) TTL on the delay action must be present")
-        assertFalse(body.contains("getTimestamp"), "getTimestamp is not a real DivKit 32.6.0 builtin, must not be used")
+        assertTrue(
+            body.contains("\"lifetime\":259200"),
+            "3-day (seconds) TTL on the delay action must be present"
+        )
+        assertFalse(
+            body.contains("getTimestamp"),
+            "getTimestamp is not a real DivKit 32.6.0 builtin, must not be used"
+        )
     }
 
     @Test
@@ -133,8 +157,14 @@ class ApplicationSmokeTest {
         assertTrue(body.contains("main_scroll"), "Must contain the main_scroll gallery id")
         assertTrue(body.contains("background_cloudy_day.png"), "Must contain the mock bg image")
         // Cross-worktree glue with the client (Worktree C): the scroll extension + custom_props keys.
-        assertTrue(body.contains("scroll_state"), "Must carry the scroll_state extension for header collapse")
-        assertTrue(body.contains("\"sunrise\""), "sun_phase custom_props must carry the sunrise key")
+        assertTrue(
+            body.contains("scroll_state"),
+            "Must carry the scroll_state extension for header collapse"
+        )
+        assertTrue(
+            body.contains("\"sunrise\""),
+            "sun_phase custom_props must carry the sunrise key"
+        )
         assertTrue(body.contains("\"sunset\""), "sun_phase custom_props must carry the sunset key")
         // Read-global guard: header_state is referenced via state_id_variable (the reactive
         // DivKit binding) but NOT declared as a local variable here (the client declares it
@@ -148,7 +178,10 @@ class ApplicationSmokeTest {
             body.contains("\"name\":\"header_state\""),
             "header_state must NOT be declared as a local variable (client owns it globally)",
         )
-        assertTrue(body.contains("\"type\":\"gradient\""), "UV/pressure scale gradient must be present")
+        assertTrue(
+            body.contains("\"type\":\"gradient\""),
+            "UV/pressure scale gradient must be present"
+        )
     }
 
     @Test
@@ -158,12 +191,21 @@ class ApplicationSmokeTest {
         assertEquals(HttpStatusCode.OK, resp.status)
         val body = resp.bodyAsText()
         assertTrue(body.contains("\"templates\""), "Must contain 'templates' key")
-        assertTrue(body.contains("\"hour_cell_skeleton\""), "Must register the 'hour_cell_skeleton' template")
-        assertTrue(body.contains("\"daily_row_skeleton\""), "Must register the 'daily_row_skeleton' template")
+        assertTrue(
+            body.contains("\"hour_cell_skeleton\""),
+            "Must register the 'hour_cell_skeleton' template"
+        )
+        assertTrue(
+            body.contains("\"daily_row_skeleton\""),
+            "Must register the 'daily_row_skeleton' template"
+        )
         assertTrue(body.contains("\"main\""), "Must contain 'main' screen")
         assertTrue(body.contains("\"settings\""), "Must contain 'settings' screen")
         assertTrue(body.contains("\"about\""), "Must contain 'about' screen")
-        assertTrue(body.contains("\"zero_skeleton\""), "main div must carry the zero_skeleton marker id")
+        assertTrue(
+            body.contains("\"zero_skeleton\""),
+            "main div must carry the zero_skeleton marker id"
+        )
         assertTrue(body.contains("\"header\""), "Must keep the header state id")
         assertTrue(body.contains("\"main_scroll\""), "Must keep the main_scroll gallery id")
         assertTrue(body.contains("\"scroll_state\""), "Must carry the scroll_state extension")
@@ -179,7 +221,10 @@ class ApplicationSmokeTest {
         val resp = client.get("/zero?lang=en")
         val body = resp.bodyAsText()
         assertTrue(body.contains("Settings"), "English zero response must localize settings chrome")
-        assertFalse(body.contains("Настройки"), "English zero response must not contain Russian settings chrome")
+        assertFalse(
+            body.contains("Настройки"),
+            "English zero response must not contain Russian settings chrome"
+        )
     }
 
     @Test
@@ -196,7 +241,10 @@ class ApplicationSmokeTest {
             body.contains("weather-app://city_search?q=@{city_query}"),
             "Must carry the city_search action with the substituted query",
         )
-        assertTrue(body.contains("city_search_results"), "Must contain the DivPatch target container id")
+        assertTrue(
+            body.contains("city_search_results"),
+            "Must contain the DivPatch target container id"
+        )
         assertFalse(
             body.contains("\"on_variable\""),
             "per-keystroke on_variable trigger must be removed (search fires on button/enter only)",

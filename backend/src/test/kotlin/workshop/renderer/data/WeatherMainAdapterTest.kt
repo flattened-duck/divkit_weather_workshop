@@ -174,12 +174,16 @@ class WeatherMainAdapterTest {
             .build()
 
         val daily = listOf(
-            DailyPoint.newBuilder().setWeekday("A").setTempMin(0).setTempMax(10).setCondition(ConditionCode.CLEAR).setPrecipProb(0).build(),
-            DailyPoint.newBuilder().setWeekday("B").setTempMin(98).setTempMax(99).setCondition(ConditionCode.CLEAR).setPrecipProb(0).build(),
-            DailyPoint.newBuilder().setWeekday("C").setTempMin(50).setTempMax(100).setCondition(ConditionCode.CLEAR).setPrecipProb(0).build(),
+            DailyPoint.newBuilder().setWeekday("A").setTempMin(0).setTempMax(10)
+                .setCondition(ConditionCode.CLEAR).setPrecipProb(0).build(),
+            DailyPoint.newBuilder().setWeekday("B").setTempMin(98).setTempMax(99)
+                .setCondition(ConditionCode.CLEAR).setPrecipProb(0).build(),
+            DailyPoint.newBuilder().setWeekday("C").setTempMin(50).setTempMax(100)
+                .setCondition(ConditionCode.CLEAR).setPrecipProb(0).build(),
         )
         val hourly = listOf(
-            HourlyPoint.newBuilder().setTime("Now").setTempC(17).setCondition(ConditionCode.CLEAR).build(),
+            HourlyPoint.newBuilder().setTime("Now").setTempC(17).setCondition(ConditionCode.CLEAR)
+                .build(),
         )
         val data = WeatherData.newBuilder()
             .setCurrent(current)

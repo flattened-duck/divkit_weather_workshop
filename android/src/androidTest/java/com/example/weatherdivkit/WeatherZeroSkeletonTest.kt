@@ -40,7 +40,8 @@ class WeatherZeroSkeletonTest {
 
     @Test
     fun zero_skeleton_whenOfflineNoCache() {
-        DocumentLoader.baseUrl = "http://127.0.0.1:1" // dead address; cache already cleared in setUp()
+        DocumentLoader.baseUrl =
+            "http://127.0.0.1:1" // dead address; cache already cleared in setUp()
         scenario = ActivityScenario.launch(MainActivity::class.java)
         waitForDivDisplayed("main_scroll")
 

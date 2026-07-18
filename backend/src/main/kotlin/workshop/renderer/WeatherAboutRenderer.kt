@@ -71,71 +71,84 @@ class WeatherAboutRenderer(
                                 bottom = (16 + DivVars.NAV_INSET).divanExpression(),
                             ),
                             items = listOf(
-                        // Title — theme-aware
-                        text(
-                            width = wrapContentSize(),
-                            text = localizer.getOrDefault("about.title", "About"),
-                            fontSize = 28,
-                            fontWeight = bold,
-                            margins = edgeInsets(bottom = 16),
-                        ).evaluate(textColor = Theme.PRIMARY_TEXT.divanExpression()),
-
-                        // ── Info card: app name + version ───────────────────────────
-                        card(
-                            header = null,
-                            items = listOf(
+                                // Title — theme-aware
                                 text(
                                     width = wrapContentSize(),
-                                    text = "DivKit Weather Workshop",
-                                    fontSize = 20,
+                                    text = localizer.getOrDefault("about.title", "About"),
+                                    fontSize = 28,
                                     fontWeight = bold,
-                                    margins = edgeInsets(bottom = 4),
+                                    margins = edgeInsets(bottom = 16),
                                 ).evaluate(textColor = Theme.PRIMARY_TEXT.divanExpression()),
-                                text(
-                                    width = wrapContentSize(),
-                                    text = localizer.getOrDefault("about.version", "Version 1.0.0"),
-                                    fontSize = 13,
-                                    textColor = color("#FF8E8E93"),
+
+                                // ── Info card: app name + version ───────────────────────────
+                                card(
+                                    header = null,
+                                    items = listOf(
+                                        text(
+                                            width = wrapContentSize(),
+                                            text = "DivKit Weather Workshop",
+                                            fontSize = 20,
+                                            fontWeight = bold,
+                                            margins = edgeInsets(bottom = 4),
+                                        ).evaluate(textColor = Theme.PRIMARY_TEXT.divanExpression()),
+                                        text(
+                                            width = wrapContentSize(),
+                                            text = localizer.getOrDefault(
+                                                "about.version",
+                                                "Version 1.0.0"
+                                            ),
+                                            fontSize = 13,
+                                            textColor = color("#FF8E8E93"),
+                                        ),
+                                    ),
                                 ),
-                            ),
-                        ),
 
-                        // ── GitHub link — full-width accent button ──────────────────
-                        text(
-                            width = matchParentSize(),
-                            text = localizer.getOrDefault("about.repo", "GitHub"),
-                            fontSize = 16,
-                            fontWeight = bold,
-                            textColor = color("#FFFFFFFF"),
-                            textAlignmentHorizontal = center,
-                            margins = edgeInsets(bottom = 24),
-                            paddings = edgeInsets(start = 16, top = 10, end = 16, bottom = 10),
-                            background = listOf(solidBackground(color("#FF007AFF"))),
-                            border = border(cornerRadius = 10),
-                            action = action(
-                                logId = "open_github",
-                                url = url("https://github.com/divkit/divkit"),
-                            ),
-                        ),
+                                // ── GitHub link — full-width accent button ──────────────────
+                                text(
+                                    width = matchParentSize(),
+                                    text = localizer.getOrDefault("about.repo", "GitHub"),
+                                    fontSize = 16,
+                                    fontWeight = bold,
+                                    textColor = color("#FFFFFFFF"),
+                                    textAlignmentHorizontal = center,
+                                    margins = edgeInsets(bottom = 24),
+                                    paddings = edgeInsets(
+                                        start = 16,
+                                        top = 10,
+                                        end = 16,
+                                        bottom = 10
+                                    ),
+                                    background = listOf(solidBackground(color("#FF007AFF"))),
+                                    border = border(cornerRadius = 10),
+                                    action = action(
+                                        logId = "open_github",
+                                        url = url("https://github.com/divkit/divkit"),
+                                    ),
+                                ),
 
-                        // ── Navigation ──────────────────────────────────────────────
-                        // Single button: every sub-screen is reached only from main, so a
-                        // separate "Back" action would be a redundant duplicate of "Home".
-                        text(
-                            id = "nav_home",
-                            width = wrapContentSize(),
-                            text = localizer.getOrDefault("nav.main", "Home"),
-                            fontSize = 16,
-                            textAlignmentHorizontal = center,
-                            paddings = edgeInsets(start = 16, top = 10, end = 16, bottom = 10),
-                            background = listOf(solidBackground(color("#FF007AFF"))),
-                            border = border(cornerRadius = 10),
-                            textColor = color("#FFFFFFFF"),
-                            action = action(
-                                logId = "nav_main",
-                                url = url("weather-app://navigate?screen=main"),
-                            ),
-                        ),
+                                // ── Navigation ──────────────────────────────────────────────
+                                // Single button: every sub-screen is reached only from main, so a
+                                // separate "Back" action would be a redundant duplicate of "Home".
+                                text(
+                                    id = "nav_home",
+                                    width = wrapContentSize(),
+                                    text = localizer.getOrDefault("nav.main", "Home"),
+                                    fontSize = 16,
+                                    textAlignmentHorizontal = center,
+                                    paddings = edgeInsets(
+                                        start = 16,
+                                        top = 10,
+                                        end = 16,
+                                        bottom = 10
+                                    ),
+                                    background = listOf(solidBackground(color("#FF007AFF"))),
+                                    border = border(cornerRadius = 10),
+                                    textColor = color("#FFFFFFFF"),
+                                    action = action(
+                                        logId = "nav_main",
+                                        url = url("weather-app://navigate?screen=main"),
+                                    ),
+                                ),
                             ),
                         ),
                     ),

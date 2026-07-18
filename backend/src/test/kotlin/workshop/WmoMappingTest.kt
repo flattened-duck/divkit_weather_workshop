@@ -70,7 +70,10 @@ class WmoMappingTest {
         for (condition in conditions) {
             for (isDay in listOf(true, false)) {
                 val key = bgKey(condition, isDay)
-                assertTrue(legalRegex.matches(key), "bgKey($condition, $isDay) = '$key' is not a legal bg_key")
+                assertTrue(
+                    legalRegex.matches(key),
+                    "bgKey($condition, $isDay) = '$key' is not a legal bg_key"
+                )
             }
         }
     }

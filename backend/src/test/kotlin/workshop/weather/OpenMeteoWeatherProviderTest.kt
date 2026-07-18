@@ -15,7 +15,8 @@ private class FakeForecastClient(private val node: JsonNode) : ForecastClient {
 }
 
 private class ThrowingForecastClient : ForecastClient {
-    override suspend fun forecast(lat: Double, lon: Double): JsonNode = throw java.io.IOException("boom")
+    override suspend fun forecast(lat: Double, lon: Double): JsonNode =
+        throw java.io.IOException("boom")
 }
 
 private const val HAPPY_JSON = """
@@ -106,7 +107,9 @@ class OpenMeteoWeatherProviderTest {
     private val loc = Localizer("ru")
     private val city = CityParam(55.0, 37.0, "Testville")
 
-    private fun provide(client: ForecastClient) = runBlocking { OpenMeteoWeatherProvider(client).provide(city, loc) }
+    private fun provide(client: ForecastClient) =
+        runBlocking { OpenMeteoWeatherProvider(client).provide(city, loc) }
+
     private fun mockResult() = runBlocking { MockWeatherProvider.provide(city, loc) }
 
     @Test

@@ -29,7 +29,8 @@ class WeatherRefetchTest {
         val ru = fetchLiveDocument("ru")
         val en = fetchLiveDocument("en")
         dispatcher = LangDispatcher(ru, en)
-        server = MockWebServer().apply { this.dispatcher = this@WeatherRefetchTest.dispatcher; start() }
+        server =
+            MockWebServer().apply { this.dispatcher = this@WeatherRefetchTest.dispatcher; start() }
         DocumentLoader.baseUrl = "http://127.0.0.1:${server.port}"
     }
 
@@ -40,7 +41,9 @@ class WeatherRefetchTest {
         DocumentLoader.baseUrl = DocumentLoader.DEFAULT_BASE_URL
     }
 
-    private fun launch() { scenario = ActivityScenario.launch(MainActivity::class.java) }
+    private fun launch() {
+        scenario = ActivityScenario.launch(MainActivity::class.java)
+    }
 
     private fun waitForRequestCountAbove(n: Int, timeoutMs: Long = 10_000) {
         val end = SystemClock.uptimeMillis() + timeoutMs
@@ -48,7 +51,10 @@ class WeatherRefetchTest {
             if (dispatcher.requestCount > n) return
             SystemClock.sleep(100)
         }
-        assertTrue("expected requestCount > $n, was ${dispatcher.requestCount}", dispatcher.requestCount > n)
+        assertTrue(
+            "expected requestCount > $n, was ${dispatcher.requestCount}",
+            dispatcher.requestCount > n
+        )
     }
 
     @Test

@@ -152,7 +152,8 @@ class DocumentLoader(private val context: Context) : DocumentSource {
             val keys = screensJson.keys()
             while (keys.hasNext()) {
                 val key = keys.next()
-                Screen.fromWireId(key)?.let { put(it, DivData(env, screensJson.getJSONObject(key))) }
+                Screen.fromWireId(key)
+                    ?.let { put(it, DivData(env, screensJson.getJSONObject(key))) }
             }
         }
     }
@@ -160,6 +161,7 @@ class DocumentLoader(private val context: Context) : DocumentSource {
     companion object {
         const val TAG = "DocumentLoader"
         const val DEFAULT_BASE_URL = "http://10.0.2.2:8080"
-        @Volatile var baseUrl: String = DEFAULT_BASE_URL
+        @Volatile
+        var baseUrl: String = DEFAULT_BASE_URL
     }
 }

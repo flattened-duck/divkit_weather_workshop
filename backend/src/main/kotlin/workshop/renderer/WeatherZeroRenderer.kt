@@ -192,7 +192,10 @@ class WeatherZeroRenderer(
             width = matchParentSize(weight = 1.0),
             items = listOf(
                 detailSkeletonCard(icon = "🔆", title = loc("weather.uv", "UV index")),
-                detailSkeletonCard(icon = "🌧️", title = loc("weather.precipitation", "Precipitation")),
+                detailSkeletonCard(
+                    icon = "🌧️",
+                    title = loc("weather.precipitation", "Precipitation")
+                ),
                 detailSkeletonCard(icon = "💧", title = loc("weather.humidity", "Humidity")),
                 detailSkeletonCard(icon = "💨", title = loc("weather.wind", "Wind")),
             ),
@@ -216,7 +219,12 @@ class WeatherZeroRenderer(
         val scrollBody = gallery(
             id = "main_scroll",
             orientation = vertical,
-            extensions = listOf(extension(id = "scroll_state", params = mapOf("orientation" to "vertical"))),
+            extensions = listOf(
+                extension(
+                    id = "scroll_state",
+                    params = mapOf("orientation" to "vertical")
+                )
+            ),
             width = matchParentSize(),
             height = matchParentSize(),
             paddings = edgeInsets().evaluate(
@@ -234,8 +242,19 @@ class WeatherZeroRenderer(
             alignmentVertical = bottom,
             paddings = edgeInsets(end = 16).evaluate(bottom = (20 + DivVars.NAV_INSET).divanExpression()),
             items = listOf(
-                fab("⚙", action(logId = "fab_settings", url = url("weather-app://navigate?screen=settings")), id = "fab_settings"),
-                fab("ℹ", action(logId = "fab_about", url = url("weather-app://navigate?screen=about")), id = "fab_about"),
+                fab(
+                    "⚙",
+                    action(
+                        logId = "fab_settings",
+                        url = url("weather-app://navigate?screen=settings")
+                    ),
+                    id = "fab_settings"
+                ),
+                fab(
+                    "ℹ",
+                    action(logId = "fab_about", url = url("weather-app://navigate?screen=about")),
+                    id = "fab_about"
+                ),
             ),
         )
 
@@ -290,13 +309,24 @@ class WeatherZeroRenderer(
                     fontSize = 12,
                 ).evaluate(textColor = Theme.SECONDARY_TEXT.divanExpression()),
             )
-            add(shimmerBar(width = fixedSize(90), height = fixedSize(28), margins = edgeInsets(top = 8)))
+            add(
+                shimmerBar(
+                    width = fixedSize(90),
+                    height = fixedSize(28),
+                    margins = edgeInsets(top = 8)
+                )
+            )
             if (bodyHeight != null) {
                 add(
                     container(
                         width = matchParentSize(),
                         margins = edgeInsets(top = 10),
-                        items = listOf(shimmerBar(width = matchParentSize(), height = fixedSize(bodyHeight))),
+                        items = listOf(
+                            shimmerBar(
+                                width = matchParentSize(),
+                                height = fixedSize(bodyHeight)
+                            )
+                        ),
                     ),
                 )
             }

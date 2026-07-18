@@ -26,7 +26,12 @@ object CityRegistry {
     fun search(query: String, lang: String): List<CityHit> {
         if (query.isEmpty()) return emptyList()
         return CITIES
-            .filter { it.nameRu.contains(query, ignoreCase = true) || it.nameEn.contains(query, ignoreCase = true) }
+            .filter {
+                it.nameRu.contains(query, ignoreCase = true) || it.nameEn.contains(
+                    query,
+                    ignoreCase = true
+                )
+            }
             .take(8)
             .map { CityHit(displayName(it, lang), it.lat, it.lon) }
     }

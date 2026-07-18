@@ -11,7 +11,8 @@ class OpenMeteoGeocoder(private val client: OpenMeteoClient) : Geocoder {
             if (!results.isArray) return emptyList()
             results.take(8).map { node ->
                 val name = node.path("name").asText()
-                val admin1 = node.path("admin1").takeIf { !it.isMissingNode && !it.isNull }?.asText()
+                val admin1 =
+                    node.path("admin1").takeIf { !it.isMissingNode && !it.isNull }?.asText()
                 val displayName = if (!admin1.isNullOrEmpty()) "$name, $admin1" else name
                 CityHit(
                     name = displayName,

@@ -21,12 +21,16 @@ import org.hamcrest.TypeSafeMatcher
  *  (DivBaseBinder.applyId: `tag = divId`, R-32.57). */
 fun withDivId(divId: String): Matcher<View> = object : TypeSafeMatcher<View>() {
     override fun matchesSafely(v: View): Boolean = v.tag == divId
-    override fun describeTo(d: Description) { d.appendText("view with DivKit id (view.tag == \"$divId\")") }
+    override fun describeTo(d: Description) {
+        d.appendText("view with DivKit id (view.tag == \"$divId\")")
+    }
 }
 
 private fun hasMinChildCount(min: Int): Matcher<View> = object : TypeSafeMatcher<View>() {
     override fun matchesSafely(v: View): Boolean = v is ViewGroup && v.childCount >= min
-    override fun describeTo(d: Description) { d.appendText("a ViewGroup with childCount >= $min") }
+    override fun describeTo(d: Description) {
+        d.appendText("a ViewGroup with childCount >= $min")
+    }
 }
 
 fun assertDivDisplayed(divId: String) {
@@ -54,9 +58,13 @@ fun assertDivAbsent(divId: String) {
 }
 
 private fun isDivAbsentOrHiddenNow(divId: String): Boolean =
-    try { onView(withDivId(divId)).check(matches(not(isDisplayed()))); true }
-    catch (e: androidx.test.espresso.NoMatchingViewException) { true }
-    catch (t: Throwable) { false }
+    try {
+        onView(withDivId(divId)).check(matches(not(isDisplayed()))); true
+    } catch (e: androidx.test.espresso.NoMatchingViewException) {
+        true
+    } catch (t: Throwable) {
+        false
+    }
 
 /** Polling counterpart to [assertDivAbsent]: waits until [divId] is gone or hidden, e.g. for a
  *  background swap (phase 2 of MainActivity's cold start) that replaces a skeleton div id which
@@ -79,8 +87,11 @@ fun typeIntoDivId(divId: String, text: String) {
 }
 
 private fun isDivDisplayedNow(divId: String): Boolean =
-    try { onView(withDivId(divId)).check(matches(isDisplayed())); true }
-    catch (t: Throwable) { false }
+    try {
+        onView(withDivId(divId)).check(matches(isDisplayed())); true
+    } catch (t: Throwable) {
+        false
+    }
 
 fun waitForDivDisplayed(divId: String, timeoutMs: Long = 10_000) {
     val end = SystemClock.uptimeMillis() + timeoutMs
@@ -94,7 +105,9 @@ fun waitForDivDisplayed(divId: String, timeoutMs: Long = 10_000) {
 fun waitForDivGone(divId: String, timeoutMs: Long = 5_000) {
     val end = SystemClock.uptimeMillis() + timeoutMs
     while (SystemClock.uptimeMillis() < end) {
-        if (!isDivDisplayedNow(divId)) { assertDivNotDisplayed(divId); return }
+        if (!isDivDisplayedNow(divId)) {
+            assertDivNotDisplayed(divId); return
+        }
         SystemClock.sleep(100)
     }
     assertDivNotDisplayed(divId)
@@ -105,8 +118,11 @@ fun assertDivHasChildren(divId: String, min: Int = 1) {
 }
 
 private fun isDivChildrenNow(divId: String, min: Int): Boolean =
-    try { onView(withDivId(divId)).check(matches(hasMinChildCount(min))); true }
-    catch (t: Throwable) { false }
+    try {
+        onView(withDivId(divId)).check(matches(hasMinChildCount(min))); true
+    } catch (t: Throwable) {
+        false
+    }
 
 fun waitForDivChildren(divId: String, min: Int = 1, timeoutMs: Long = 10_000) {
     val end = SystemClock.uptimeMillis() + timeoutMs

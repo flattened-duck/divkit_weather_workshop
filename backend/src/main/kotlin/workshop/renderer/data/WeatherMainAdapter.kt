@@ -52,7 +52,11 @@ class WeatherMainAdapter(private val localizer: Localizer) {
             todayMinArrowLabel = "  ↓ ${daily0.tempMin}°",
             compactSummaryLabel = "${current.tempC}°  |  " + conditionLabel,
             hourly = hourly.map { h ->
-                HourCellVm(time = h.time, emoji = conditionEmoji(h.condition), tempLabel = "${h.tempC}°")
+                HourCellVm(
+                    time = h.time,
+                    emoji = conditionEmoji(h.condition),
+                    tempLabel = "${h.tempC}°"
+                )
             },
             daily = daily.map { d -> dailyRow(d, weekMin, span) },
             sunsetTitle = loc("weather.sunset", "Sunset"),

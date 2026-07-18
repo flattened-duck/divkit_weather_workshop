@@ -31,7 +31,9 @@ class ScreenNavigator(
     fun renderCurrent() = renderScreen(currentScreen)
 
     fun goBack() {
-        if (backStack.size <= 1) { onExit(); return }
+        if (backStack.size <= 1) {
+            onExit(); return
+        }
         backStack.removeAt(backStack.lastIndex)
         val previous = backStack.lastOrNull() ?: run { onExit(); return }
         renderScreen(previous)

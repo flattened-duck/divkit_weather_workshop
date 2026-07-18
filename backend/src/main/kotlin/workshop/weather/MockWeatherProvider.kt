@@ -37,7 +37,12 @@ object MockWeatherProvider : WeatherProvider {
 
         val hourly = (0 until 24).map { hour ->
             HourlyPoint.newBuilder()
-                .setTime(if (hour == 0) localizer.getOrDefault("hourly.now", "now") else "%02d:00".format(hour))
+                .setTime(
+                    if (hour == 0) localizer.getOrDefault(
+                        "hourly.now",
+                        "now"
+                    ) else "%02d:00".format(hour)
+                )
                 .setTempC(17 - (hour % 6))
                 .setCondition(if (hour % 5 == 0) ConditionCode.CLOUDY else ConditionCode.CLEAR)
                 .build()

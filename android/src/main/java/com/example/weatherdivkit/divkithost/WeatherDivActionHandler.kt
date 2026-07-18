@@ -48,33 +48,44 @@ class WeatherDivActionHandler(
                 mainHandler.post { onNavigate(screen) }
                 true
             }
+
             "back" -> {
                 mainHandler.post { onBack() }
                 true
             }
+
             "set_lang" -> {
                 val lang = url.getQueryParameter("value") ?: return false
                 mainHandler.post { onSetLang(lang) }
                 true
             }
+
             "set_theme" -> {
                 val mode = url.getQueryParameter("mode")
-                if (mode == null || mode !in setOf(ThemeMode.SYSTEM, ThemeMode.DARK, ThemeMode.LIGHT)) return false
+                if (mode == null || mode !in setOf(
+                        ThemeMode.SYSTEM,
+                        ThemeMode.DARK,
+                        ThemeMode.LIGHT
+                    )
+                ) return false
                 mainHandler.post { onSetTheme(mode) }
                 true
             }
+
             "set_compact" -> {
                 val raw = url.getQueryParameter("value")
                 val value = raw?.toBooleanStrictOrNull() ?: return false
                 mainHandler.post { onSetCompact(value) }
                 true
             }
+
             "city_search" -> {
                 val q = url.getQueryParameter("q") ?: ""
                 val div2View = view as? Div2View ?: return false
                 mainHandler.post { onCitySearch(q, div2View) }
                 true
             }
+
             "set_city" -> {
                 val lat = url.getQueryParameter("lat") ?: return false
                 val lon = url.getQueryParameter("lon") ?: return false
@@ -82,6 +93,7 @@ class WeatherDivActionHandler(
                 mainHandler.post { onSetCity(lat, lon, name) }
                 true
             }
+
             else -> false
         }
     }

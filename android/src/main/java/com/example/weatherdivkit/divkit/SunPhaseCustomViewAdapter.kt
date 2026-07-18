@@ -39,9 +39,12 @@ class SunPhaseCustomViewAdapter : DivCustomContainerViewAdapter {
         val nowRaw = props?.optString("now")
         val nowMin = parseHhMm(nowRaw) ?: nowFromDeviceClock()
 
-        val arcColor = parseColorOrNull(props?.optString("arc_color")) ?: SunPhaseView.DEFAULT_ARC_COLOR
-        val trackColor = parseColorOrNull(props?.optString("track_color")) ?: SunPhaseView.DEFAULT_TRACK_COLOR
-        val markerColor = parseColorOrNull(props?.optString("marker_color")) ?: SunPhaseView.DEFAULT_MARKER_COLOR
+        val arcColor =
+            parseColorOrNull(props?.optString("arc_color")) ?: SunPhaseView.DEFAULT_ARC_COLOR
+        val trackColor =
+            parseColorOrNull(props?.optString("track_color")) ?: SunPhaseView.DEFAULT_TRACK_COLOR
+        val markerColor =
+            parseColorOrNull(props?.optString("marker_color")) ?: SunPhaseView.DEFAULT_MARKER_COLOR
 
         if (sunriseMin == null || sunsetMin == null) {
             Log.w(TAG, "sun_phase: missing/unparseable sunrise or sunset — rendering empty arc")

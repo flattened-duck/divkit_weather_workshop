@@ -22,7 +22,12 @@ private class FakeDocumentSource : DocumentSource {
         return assetsResult
     }
 
-    override fun loadFromNetwork(lang: String, lat: String?, lon: String?, name: String?): Map<Screen, DivData>? {
+    override fun loadFromNetwork(
+        lang: String,
+        lat: String?,
+        lon: String?,
+        name: String?
+    ): Map<Screen, DivData>? {
         calls.add("network")
         lastNetworkArgs = listOf(lang, lat, lon, name)
         return networkResult

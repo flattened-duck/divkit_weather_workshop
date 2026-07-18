@@ -14,7 +14,12 @@ class DocumentRepository(private val source: DocumentSource) {
         source.loadFromNetwork(lang, lat, lon, name)
 
     /** Network, else same-lang cache. setLang. Never falls to bundled asset. */
-    fun fetchOrCache(lang: String, lat: String?, lon: String?, name: String?): Map<Screen, DivData>? =
+    fun fetchOrCache(
+        lang: String,
+        lat: String?,
+        lon: String?,
+        name: String?
+    ): Map<Screen, DivData>? =
         source.loadFromNetwork(lang, lat, lon, name) ?: source.loadFromCache(lang)
 
     fun citySearchPatch(query: String, lang: String): DivPatch? =
